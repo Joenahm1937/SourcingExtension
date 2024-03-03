@@ -7,7 +7,7 @@
         "dev": "vite",
         "build": "tsc && vite build",
         "preview": "vite preview",
-        "clean": "rm -rf dist node_modules"
+        "clean": "rm -rf dist"
     },
     "devDependencies": {
         "typescript": "^5.2.2",
