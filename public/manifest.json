@@ -3,6 +3,7 @@
     "name": "sourcing-extension",
     "description": "automates sourcing for marketing professionals",
     "version": "1.0",
+    "permissions": ["storage", "tabs", "activeTab"],
     "action": {
         "default_popup": "index.html"
     },
@@ -11,7 +12,7 @@
     },
     "content_scripts": [
         {
-            "matches": ["<all_urls>"],
+            "matches": ["https://www.instagram.com/*"],
             "js": ["contentScript.js"]
         }
     ]

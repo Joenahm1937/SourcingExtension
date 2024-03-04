@@ -1,47 +1,49 @@
-# SourcingExtension
+# Sourcing Assistant
 
-SourcingExtension is a Chrome extension built using Vite. Below is the file structure and a guide to get started with development and testing.
+Sourcing Assistant is a Chrome extension built using Vite. Below is the file structure and a guide to get started with development and testing.
 
 ## File Structure
 
+```plaintext
 SourcingExtension/
 ├── dist/
-│ ├── contentScript.js
-│ ├── index.html
-│ ├── manifest.json
-│ ├── popup.css
-│ ├── popup.js
-│ ├── serviceWorker.js
-│ └── vite.svg
+│   ├── contentScript.js
+│   ├── index.html
+│   ├── manifest.json
+│   ├── popup.css
+│   ├── popup.js
+│   ├── serviceWorker.js
 ├── node_modules/
-│ └── ...
-├── public/
-│ ├── manifest.json
-│ └── vite.svg
-├── src/
-│ ├── background/
-│ │ └── serviceWorker.ts # TypeScript file for the background service worker logic of the extension.
-│ ├── content/
-│ │ └── contentScript.ts # TypeScript file for the content script that interacts with webpages opened in the browser.
-│ ├── popup/
-│ │ ├── main.ts # Main TypeScript entry file that initializes and controls the popup's behavior.
-│ │ ├── style.css # CSS file for styling the popup window of the extension.
-│ └── vite-env.d.ts # TypeScript declaration file that includes types for Vite-specific environment variables.
+│   └── ...
+├── public/                        # Static assets for the extension
+│   ├── manifest.json              # Source manifest for the extension
+│   └── logo.svg
+├── src/                           # Source code for the extension
+│   ├── background/                # Background service worker logic
+│   │   └── serviceWorker.ts       # TypeScript file for the service worker
+│   ├── content/                   # Content scripts interacting with the browser
+│   │   └── contentScript.ts       # TypeScript content script file
+│   ├── popup/                     # Popup UI logic and styles
+│   │   ├── counter.ts
+│   │   ├── main.ts                # Main entry script for the popup
+│   │   ├── style.css              # Styles for the popup window
+│   └── vite-env.d.ts
 ├── .gitignore
-├── index.html # HTML file for the popup window
+├── index.html                     # HTML for the popup
 ├── package-lock.json
 ├── package.json
 ├── README.md
-├── tsconfig.json
-└── vite.config.ts
+├── tsconfig.json                  # TypeScript compiler configuration
+└── vite.config.ts                 # Vite build and serve configuration
+```
 
 ## Getting Started
 
-To set up the SourcingExtension for development:
+To set up the Sourcing Assistant for development:
 
 1. Install the necessary dependencies using `npm install`.
-2. Start the development server using `npm run dev`.
-   This will serve the popup HTML file for testing, which can be opened directly in the browser.
+2. Start the development server using `npm run watch`.
+   This will allow you to open the popup UI in both the browser and the extension for quick debugging.
 3. To build the extension for production, run `npm run build`.
    This will compile all necessary files into the `dist/` directory.
 4. Load the `dist/` folder into Chrome Extensions. For guidance on loading unpacked extensions,
