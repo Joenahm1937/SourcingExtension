@@ -1,25 +1,23 @@
 import { useEffect, useState } from 'react';
 import logo from '/logo.svg';
 import './App.css';
-import {
-    BackgroundToPopupMessage,
-    IPageData,
-    PopupToBackgroundAction,
-} from '../interfaces';
-import { BUTTON_TEXT, INVALID_PAGE_ERROR } from './constants';
+import { ICardData } from './interfaces';
+import { BUTTON_TEXT, POPUP_SIGNAL, isWorkerMessage } from './constants';
 import PageList from './PageList';
 import ErrorComponent from './ErrorComponent';
+import { IMessage, IPopupMessage, IResponse } from '../interfaces';
 
 const App = () => {
     const [running, setRunning] = useState(false);
-    const [pages, _] = useState<IPageData[]>([]);
+    const [pages, setPages] = useState<ICardData[]>([]);
     const [errorMessage, setErrorMessage] = useState<string>();
 
     useEffect(() => {
-        // Listen for messages from the background script
-        const handleMessage = (message: BackgroundToPopupMessage) => {
-            if (message.action === 'updatePopup') {
-                refreshPages();
+        const handleMessage = (message: IMessage) => {
+            if (isWorkerMessage(message) && message.signal === 'refresh') {
+                // Temporarily passing in data from message
+                // We should pull this from local storage instead
+                refreshPages(message.data);
             }
         };
 
@@ -27,20 +25,27 @@ const App = () => {
         return () => chrome.runtime.onMessage.removeListener(handleMessage);
     }, []);
 
-    const refreshPages = () => {
-        // setPages([...]); // Update based on storage data
+    const refreshPages = (data: string) => {
+        setPages((prevPages) => [
+            ...prevPages,
+            {
+                profileURL: data,
+            },
+        ]);
     };
 
     const toggleScraping = () => {
-        const action = running
-            ? PopupToBackgroundAction.stopContentScript
-            : PopupToBackgroundAction.startContentScript;
-        chrome.runtime.sendMessage({ action }, (response) => {
+        const signal = running ? POPUP_SIGNAL.STOP : POPUP_SIGNAL.START;
+        const message: IPopupMessage = {
+            source: 'Popup',
+            signal,
+        };
+        chrome.runtime.sendMessage(message, (response: IResponse) => {
             if (response && response.success) {
                 setRunning(!running);
                 setErrorMessage(undefined);
             } else {
-                setErrorMessage(INVALID_PAGE_ERROR);
+                setErrorMessage(response.message);
             }
         });
     };

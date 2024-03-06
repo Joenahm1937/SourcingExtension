@@ -1,10 +1,10 @@
-import { IPageData } from '../interfaces';
+import { ICardData } from './interfaces';
 import PageCard from './PageCard';
 
-const PageList = ({ pages }: { pages: IPageData[] }) => (
+const PageList = ({ pages }: { pages: ICardData[] }) => (
     <ul className="pages">
         {pages.map((pageData) => (
-            <PageCard key={pageData.profile} {...pageData} />
+            <PageCard key={pageData.profileURL} {...pageData} />
         ))}
     </ul>
 );

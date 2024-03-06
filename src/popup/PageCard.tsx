@@ -1,8 +1,8 @@
-import { IPageData } from '../interfaces';
+import { ICardData } from './interfaces';
 
-const PageCard = ({ profile }: IPageData) => (
+const PageCard = ({ profileURL }: ICardData) => (
     <li className="page-card">
-        <div>{profile}</div>
+        <div>{profileURL}</div>
     </li>
 );
 
