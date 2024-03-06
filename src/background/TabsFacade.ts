@@ -4,10 +4,11 @@ import {
     INVALID_PAGE_ERROR,
     NO_TAB_PERMISSION_ERROR,
 } from './constants';
+import { IValidatedTab } from './interfaces';
 
-interface IValidatedTab extends chrome.tabs.Tab {
-    url: string;
-}
+const MOCK_SUGGESTED_PROFILE_URLS = Array(5).fill(
+    'https://www.instagram.com/joenahm/'
+);
 
 /**
  * A singleton class to manage and control the opening and processing of tabs.
@@ -103,36 +104,53 @@ class TabsFacadeClass {
         const urlsToProcess = this.dequeueFreeUrls();
         urlsToProcess.forEach((url) => {
             this.openTabsCount++;
-            console.log(`Processing URL: ${url}`);
+            chrome.tabs.create({ url: url, active: false }, (tab) => {
+                if (tab.id) {
+                    // Check every 1 second if the tab is ready
+                    const checkTabReady = setInterval(() => {
+                        chrome.tabs.get(tab.id as number, (updatedTab) => {
+                            if (updatedTab.status === 'complete') {
+                                clearInterval(checkTabReady);
 
-            // Simulate mock asynchronous tab processing
-            const timeoutId = setTimeout(() => {
-                this.openTabsCount--;
-                console.log(`Completed processing URL: ${url}`);
-                const message: IWorkerMessage = {
-                    source: 'Worker',
-                    signal: 'refresh',
-                    data: url,
-                };
-                chrome.runtime.sendMessage(message);
-                const newUrl1 = `${url}->child1`;
-                const newUrl2 = `${url}->child2`;
-                this.enqueueUrl([newUrl1, newUrl2]);
-                if (this.urlQueue.length > 0 && this.enabled) {
-                    this.processNextUrls();
+                                // Injecting Content Script
+                                // chrome.scripting.executeScript(
+                                //     {
+                                //         target: { tabId: tab.id as number },
+                                //         files: ['contentScript.js'],
+                                //     },
+                                //     () => {
+                                //         // Handle completion of the script execution
+                                //     }
+                                // );
+
+                                // This will be replaced by signal from content script that it has finished executing
+                                setTimeout(() => {
+                                    chrome.tabs.remove(tab.id as number);
+                                    this.openTabsCount--;
+                                    const message: IWorkerMessage = {
+                                        source: 'Worker',
+                                        signal: 'refresh',
+                                        data: url,
+                                    };
+                                    chrome.runtime.sendMessage(message);
+                                    this.enqueueUrl(
+                                        MOCK_SUGGESTED_PROFILE_URLS
+                                    );
+
+                                    if (
+                                        this.urlQueue.length > 0 &&
+                                        this.enabled &&
+                                        this.openTabsCount <= this.maxTabs
+                                    ) {
+                                        this.processNextUrls();
+                                    }
+                                }, 4000);
+                            }
+                        });
+                    }, 1000);
                 }
-            }, 6000);
-
-            this.currentProcessTimeoutIds.push(timeoutId);
+            });
         });
-
-        if (
-            this.openTabsCount === 0 &&
-            this.urlQueue.length === 0 &&
-            this.enabled
-        ) {
-            this.stopProcessing();
-        }
     }
 
     /**
