@@ -40,11 +40,12 @@ const App = () => {
             source: 'Popup',
             signal,
         };
+        setRunning(!running);
         chrome.runtime.sendMessage(message, (response: IResponse) => {
             if (response && response.success) {
-                setRunning(!running);
                 setErrorMessage(undefined);
             } else {
+                setRunning(!running);
                 setErrorMessage(response.message);
             }
         });

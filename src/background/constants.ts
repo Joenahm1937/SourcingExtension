@@ -1,4 +1,8 @@
-import type { IMessage, IPopupMessage } from '../interfaces';
+import type {
+    IContentScriptMessage,
+    IMessage,
+    IPopupMessage,
+} from '../interfaces';
 
 export const INVALID_PAGE_ERROR =
     'Please navigate to an Instagram profile page.';
@@ -12,6 +16,12 @@ export const WORKER_SIGNAL = {
 
 export const isPopupMessage = (message: IMessage): message is IPopupMessage => {
     return message.source === 'Popup';
+};
+
+export const isContentScriptMessage = (
+    message: IMessage
+): message is IContentScriptMessage => {
+    return message.source === 'ContentScript';
 };
 
 export const INSTAGRAM_PROFILE_PAGE_REGEX = new RegExp(
