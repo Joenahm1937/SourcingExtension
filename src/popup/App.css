@@ -33,8 +33,10 @@
     }
 }
 
-.header {
-    padding: 1em;
+.buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
 }
 
 .read-the-docs {

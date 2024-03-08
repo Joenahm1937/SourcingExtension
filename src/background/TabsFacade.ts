@@ -64,7 +64,7 @@ class TabsFacadeClass {
      * Stops the processing of URLs, clears the queue and timeouts.
      * TODO: Close all currently open tabs and only save tabs to local storage if this.enabled
      */
-    public stopProcessing(): void {
+    public stopProcessing = (): void => {
         console.log('Stopping Processing');
         this.enabled = false;
         this.openTabs.forEach((tabId) => {
@@ -75,9 +75,9 @@ class TabsFacadeClass {
         });
         this.openTabs.clear();
         this.openTabsCount = 0;
-    }
+    };
 
-    public closeTab(tab: chrome.tabs.Tab) {
+    public closeTab = (tab: chrome.tabs.Tab) => {
         chrome.tabs.remove(tab.id as number, () => {
             this.openTabsCount--;
             this.openTabs.delete(tab.id as number);
@@ -92,7 +92,11 @@ class TabsFacadeClass {
         });
 
         this.enqueueUrl(MOCK_SUGGESTED_PROFILE_URLS);
-    }
+    };
+
+    public flushUrlQueue = () => {
+        this.urlQueue = [];
+    };
 
     /**
      * Enqueues a single URL or an array of URLs to the processing queue.

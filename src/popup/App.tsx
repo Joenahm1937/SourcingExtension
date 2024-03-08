@@ -9,7 +9,7 @@ import logo from '/logo.svg';
 import './App.css';
 import {
     TOGGLE_RUNNING_STATE,
-    RUNNING_STATE,
+    POPUP_SIGNAL,
     isWorkerMessage,
     DOWNLOAD_BUTTON_TEXT,
     EXTENSION_HEADER,
@@ -53,9 +53,7 @@ const App = () => {
     };
 
     const toggleScraping = async () => {
-        const runningStatus = running
-            ? RUNNING_STATE.STOP
-            : RUNNING_STATE.START;
+        const runningStatus = running ? POPUP_SIGNAL.STOP : POPUP_SIGNAL.START;
         const message: IPopupMessage = {
             source: 'Popup',
             signal: runningStatus,
@@ -63,9 +61,7 @@ const App = () => {
         await LocalStorageWrapper.set('isRunning', !running);
         setRunning(!running);
         chrome.runtime.sendMessage(message, (response: IResponse) => {
-            if (response && response.success) {
-                setErrorMessage(undefined);
-            } else {
+            if (!response.success) {
                 setRunning(!running);
                 setErrorMessage(response.message);
             }
@@ -74,7 +70,12 @@ const App = () => {
 
     const reset = async () => {
         LocalStorageWrapper.clear();
-        setTabs([]);
+        const message: IPopupMessage = {
+            source: 'Popup',
+            signal: 'restart',
+        };
+        chrome.runtime.sendMessage(message);
+        refreshUI();
     };
 
     const download = async () => {
@@ -88,21 +89,24 @@ const App = () => {
         <>
             <img src={logo} className="logo" alt="logo" />
             <h2>{EXTENSION_HEADER}</h2>
-            <div className="header" />
-            {!downloading ? (
-                <button onClick={toggleScraping}>
-                    {running
-                        ? TOGGLE_RUNNING_STATE.RUNNING
-                        : TOGGLE_RUNNING_STATE.REST}
-                </button>
-            ) : null}
-            {running ? <RunningAnimation /> : null}
-            {!running && !downloading && tabs.length ? (
-                <>
-                    <button onClick={reset}>{RESET_BUTTON_TEXT}</button>
-                    <button onClick={download}>{DOWNLOAD_BUTTON_TEXT}</button>
-                </>
-            ) : null}
+            <div className="buttons">
+                {!downloading ? (
+                    <button onClick={toggleScraping}>
+                        {running
+                            ? TOGGLE_RUNNING_STATE.RUNNING
+                            : TOGGLE_RUNNING_STATE.REST}
+                    </button>
+                ) : null}
+                {running ? <RunningAnimation /> : null}
+                {!running && !downloading && tabs.length ? (
+                    <>
+                        <button onClick={reset}>{RESET_BUTTON_TEXT}</button>
+                        <button onClick={download}>
+                            {DOWNLOAD_BUTTON_TEXT}
+                        </button>
+                    </>
+                ) : null}
+            </div>
 
             {downloading ? <DownloadingAnimation /> : null}
             <ErrorComponent message={errorMessage} />

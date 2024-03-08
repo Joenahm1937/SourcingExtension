@@ -25,6 +25,9 @@ const PopupMessageHandler: IPopupMessageHandler = {
         } else if (message.signal === 'stop') {
             TabsFacade.stopProcessing();
             sendResponse({ success: true });
+        } else if (message.signal === 'restart') {
+            TabsFacade.flushUrlQueue();
+            sendResponse({ success: true });
         }
         return false;
     },

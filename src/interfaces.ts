@@ -1,6 +1,6 @@
 import { WORKER_SIGNAL } from './background/constants';
 import { CONTENT_SCRIPT_SIGNAL } from './content/constants';
-import { RUNNING_STATE } from './popup/constants';
+import { POPUP_SIGNAL } from './popup/constants';
 
 export type Component = 'Worker' | 'Popup' | 'ContentScript';
 
@@ -14,7 +14,7 @@ export interface IResponse {
 }
 
 export interface IPopupMessage extends IMessage {
-    signal: (typeof RUNNING_STATE)[keyof typeof RUNNING_STATE];
+    signal: (typeof POPUP_SIGNAL)[keyof typeof POPUP_SIGNAL];
 }
 
 export interface IWorkerMessage extends IMessage {

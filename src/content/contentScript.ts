@@ -19,5 +19,5 @@ import type { ITabData, IContentScriptMessage } from '../interfaces';
         };
 
         chrome.runtime.sendMessage(message);
-    }, getRandomInt(2, 8) * 1000);
+    }, getRandomInt(1, 2) * 1000);
 })();

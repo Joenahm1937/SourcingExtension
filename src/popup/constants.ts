@@ -7,9 +7,10 @@ export const TOGGLE_RUNNING_STATE = {
     REST: 'START',
 } as const;
 
-export const RUNNING_STATE = {
+export const POPUP_SIGNAL = {
     START: 'start',
     STOP: 'stop',
+    RESTART: 'restart',
 } as const;
 
 export const RESET_BUTTON_TEXT = 'RESET';
