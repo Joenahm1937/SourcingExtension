@@ -14,7 +14,15 @@ class TabsFacadeClass {
     private readonly maxTabs = 3;
     private static instance: TabsFacadeClass;
 
+    /**
+     * Utilizes both a count and a Set of IDs for managing open tabs.
+     * The count helps with making immediate decisions on whether to open new tabs.
+     * The Set of IDs tracks actual tab IDs
+     * This dual tracking is necessary to prevent race conditions due to the asynchronous nature of tab creation
+     */
     private openTabsCount: number = 0;
+    private openTabs: Set<number> = new Set();
+
     private urlQueue: string[] = [];
     private enabled: boolean = false;
 
@@ -59,11 +67,20 @@ class TabsFacadeClass {
     public stopProcessing(): void {
         console.log('Stopping Processing');
         this.enabled = false;
+        this.openTabs.forEach((tabId) => {
+            chrome.tabs.remove(tabId, () => {
+                console.log(`Closed tab with ID: ${tabId}`);
+                // Optionally, save tabs to local storage here if needed
+            });
+        });
+        this.openTabs.clear();
+        this.openTabsCount = 0;
     }
 
     public closeTab(tab: chrome.tabs.Tab) {
         chrome.tabs.remove(tab.id as number, () => {
             this.openTabsCount--;
+            this.openTabs.delete(tab.id as number);
 
             if (
                 this.enabled &&
@@ -106,19 +123,24 @@ class TabsFacadeClass {
         urlsToProcess.forEach((url) => {
             this.openTabsCount++;
             chrome.tabs.create({ url: url, active: false }, (tab) => {
+                this.openTabs.add(tab.id as number);
                 if (tab.id) {
                     // Check every 1 second if the tab is ready
                     const checkTabReady = setInterval(() => {
-                        chrome.tabs.get(tab.id as number, (updatedTab) => {
-                            if (updatedTab.status === 'complete') {
-                                clearInterval(checkTabReady);
+                        if (this.openTabs.has(tab.id as number)) {
+                            chrome.tabs.get(tab.id as number, (updatedTab) => {
+                                if (updatedTab.status === 'complete') {
+                                    clearInterval(checkTabReady);
 
-                                chrome.scripting.executeScript({
-                                    target: { tabId: tab.id as number },
-                                    files: ['contentScript.js'],
-                                });
-                            }
-                        });
+                                    chrome.scripting.executeScript({
+                                        target: { tabId: tab.id as number },
+                                        files: ['contentScript.js'],
+                                    });
+                                }
+                            });
+                        } else {
+                            clearInterval(checkTabReady);
+                        }
                     }, 1000);
                 }
             });
