@@ -34,23 +34,14 @@ const ContentScriptMessageHandler: IContentScriptMessageHandler = {
     async processMessage(message, sender) {
         if (sender.tab) TabsFacade.closeTab(sender.tab);
         const tabData = message.tabData;
-        try {
-            const tabs = (await LocalStorageWrapper.get('tabs')) || [];
-            tabs.push(tabData);
-            await LocalStorageWrapper.set('tabs', tabs);
-            const workerMessage: IWorkerMessage = {
-                source: 'Worker',
-                signal: 'refresh',
-            };
-            chrome.runtime.sendMessage(workerMessage);
-        } catch (error) {
-            const workerMessage: IWorkerMessage = {
-                source: 'Worker',
-                signal: 'tab_failure',
-                message: (error as Error).message,
-            };
-            chrome.runtime.sendMessage(workerMessage);
-        }
+        const tabs = (await LocalStorageWrapper.get('tabs')) || [];
+        tabs.push(tabData);
+        await LocalStorageWrapper.set('tabs', tabs);
+        const workerMessage: IWorkerMessage = {
+            source: 'Worker',
+            signal: 'refresh',
+        };
+        chrome.runtime.sendMessage(workerMessage);
     },
 };
 

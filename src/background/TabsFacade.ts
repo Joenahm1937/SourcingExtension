@@ -54,6 +54,7 @@ class TabsFacadeClass {
 
     /**
      * Stops the processing of URLs, clears the queue and timeouts.
+     * TODO: Close all currently open tabs and only save tabs to local storage if this.enabled
      */
     public stopProcessing(): void {
         console.log('Stopping Processing');
