@@ -5,6 +5,7 @@ import type {
     IResponse,
     IWorkerMessage,
 } from '../interfaces';
+import { LocalStorageWrapper } from '../LocalStorageWrapper';
 import { isContentScriptMessage, isPopupMessage } from './constants';
 import { TabsFacade } from './TabsFacade';
 
@@ -30,16 +31,26 @@ const PopupMessageHandler: IPopupMessageHandler = {
 };
 
 const ContentScriptMessageHandler: IContentScriptMessageHandler = {
-    processMessage(message, sender) {
-        if (sender.tab) {
-            TabsFacade.closeTab(sender.tab);
+    async processMessage(message, sender) {
+        if (sender.tab) TabsFacade.closeTab(sender.tab);
+        const tabData = message.tabData;
+        try {
+            const tabs = (await LocalStorageWrapper.get('tabs')) || [];
+            tabs.push(tabData);
+            await LocalStorageWrapper.set('tabs', tabs);
+            const workerMessage: IWorkerMessage = {
+                source: 'Worker',
+                signal: 'refresh',
+            };
+            chrome.runtime.sendMessage(workerMessage);
+        } catch (error) {
+            const workerMessage: IWorkerMessage = {
+                source: 'Worker',
+                signal: 'tab_failure',
+                message: (error as Error).message,
+            };
+            chrome.runtime.sendMessage(workerMessage);
         }
-        const workerMessage: IWorkerMessage = {
-            source: 'Worker',
-            signal: 'refresh',
-            data: message.data,
-        };
-        chrome.runtime.sendMessage(workerMessage);
     },
 };
 

@@ -19,13 +19,12 @@ export interface IPopupMessage extends IMessage {
 
 export interface IWorkerMessage extends IMessage {
     signal: (typeof WORKER_SIGNAL)[keyof typeof WORKER_SIGNAL];
-    // Remove data when refreshPages pulls from local storage instead
-    data: string;
+    message?: string;
 }
 
 export interface IContentScriptMessage extends IMessage {
     signal: (typeof CONTENT_SCRIPT_SIGNAL)[keyof typeof CONTENT_SCRIPT_SIGNAL];
-    data: string;
+    tabData: ITabData;
 }
 
 export interface IPopupMessageHandler {
@@ -49,9 +48,23 @@ export interface IContentScriptMessageHandler {
     ) => void;
 }
 
-/**
- * Local Storage "Schema"
- */
-export interface ILocalStore {
-    urls: string[];
+type SerializableValue =
+    | string
+    | number
+    | boolean
+    | SerializableObject
+    | SerializableArray;
+type SerializableObject = { [key: string]: SerializableValue };
+type SerializableArray = SerializableValue[];
+
+export interface ITabData extends SerializableObject {
+    url: string;
+    name: string;
 }
+
+export interface ILocalStorage {
+    isRunning: boolean;
+    tabs: ITabData[];
+}
+
+export type LocalStorageKeys = keyof ILocalStorage;

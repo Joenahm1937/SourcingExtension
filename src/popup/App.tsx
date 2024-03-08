@@ -1,23 +1,31 @@
+import type {
+    IMessage,
+    IPopupMessage,
+    IResponse,
+    ITabData,
+} from '../interfaces';
 import { useEffect, useState } from 'react';
 import logo from '/logo.svg';
 import './App.css';
-import { ICardData } from './interfaces';
 import { BUTTON_TEXT, POPUP_SIGNAL, isWorkerMessage } from './constants';
-import PageList from './PageList';
+import TabCardList from './TabCardList';
 import ErrorComponent from './ErrorComponent';
-import { IMessage, IPopupMessage, IResponse } from '../interfaces';
+import { LocalStorageWrapper } from '../LocalStorageWrapper';
 
 const App = () => {
     const [running, setRunning] = useState(false);
-    const [pages, setPages] = useState<ICardData[]>([]);
+    const [tabs, setTabs] = useState<ITabData[]>([]);
     const [errorMessage, setErrorMessage] = useState<string>();
 
     useEffect(() => {
         const handleMessage = (message: IMessage) => {
             if (isWorkerMessage(message) && message.signal === 'refresh') {
-                // Temporarily passing in data from message
-                // We should pull this from local storage instead
-                refreshPages(message.data);
+                refreshPages();
+            } else if (
+                isWorkerMessage(message) &&
+                message.signal === 'tab_failure'
+            ) {
+                setErrorMessage(message.message);
             }
         };
 
@@ -25,13 +33,10 @@ const App = () => {
         return () => chrome.runtime.onMessage.removeListener(handleMessage);
     }, []);
 
-    const refreshPages = (data: string) => {
-        setPages((prevPages) => [
-            ...prevPages,
-            {
-                profileURL: data,
-            },
-        ]);
+    const refreshPages = () => {
+        LocalStorageWrapper.get('tabs').then((tabs) => {
+            setTabs(tabs || []);
+        });
     };
 
     const toggleScraping = () => {
@@ -62,7 +67,7 @@ const App = () => {
             </div>
             {running ? <p>RUNNING . . .</p> : <button>DOWNLOAD</button>}
             <ErrorComponent message={errorMessage} />
-            <PageList pages={pages} />
+            <TabCardList tabs={tabs} />
         </>
     );
 };
