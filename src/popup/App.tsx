@@ -58,11 +58,13 @@ const App = () => {
             source: 'Popup',
             signal: runningStatus,
         };
+        const newRunningStatus = !running;
         await LocalStorageWrapper.set('isRunning', !running);
-        setRunning(!running);
+        setRunning((prevRunningState) => !prevRunningState);
         chrome.runtime.sendMessage(message, (response: IResponse) => {
             if (!response.success) {
-                setRunning(!running);
+                LocalStorageWrapper.set('isRunning', !newRunningStatus);
+                setRunning((prevRunningState) => !prevRunningState);
                 setErrorMessage(response.message);
             }
         });

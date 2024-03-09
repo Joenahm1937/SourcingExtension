@@ -1,23 +1,77 @@
-import type { ITabData, IContentScriptMessage } from '../interfaces';
-(() => {
-    function getRandomInt(min: number, max: number): number {
-        min = Math.ceil(min);
-        max = Math.floor(max);
-        return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+import type { IContentScriptMessage, ITabData } from '../interfaces';
+import { DOMHelper } from './DomHelper';
 
-    // For now, simulate large variations of time when running content script
-    setTimeout(() => {
-        const data: ITabData = {
-            url: getRandomInt(0, 10000).toString(),
-            name: getRandomInt(0, 10000).toString(),
+// TODO: Make all queryStrings constants and move to constants file
+const FOLLOW_BUTTON_TEXT = 'FOLLOW';
+const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
+
+// Instagram Profile Page Specific Content Script
+(async () => {
+    const toggleFollowButton = (
+        text: string,
+        node: Document | Element = document
+    ) => {
+        const buttons = DOMHelper.findAllNodes<HTMLElement>('button', node);
+        const followButtons = DOMHelper.filterElementsByText(text, buttons);
+        const mainFollowButton = DOMHelper.findHighestElement(followButtons);
+        mainFollowButton?.click();
+    };
+
+    const followUser = async () => {
+        toggleFollowButton(FOLLOW_BUTTON_TEXT);
+        // wait for suggested profiles
+    };
+
+    const unfollowUser = async () => {
+        toggleFollowButton(UNFOLLOW_BUTTON_TEXT);
+        // wait for modal to appear
+        const dialogBox = DOMHelper.findNode('[role="dialog"]');
+        if (dialogBox) {
+            toggleFollowButton(UNFOLLOW_BUTTON_TEXT, dialogBox);
+        }
+    };
+
+    const getSuggestedProfiles = async () => {
+        const similarAccountsAnchorElement = DOMHelper.findNode(
+            '[href$="similar_accounts/"]'
+        );
+        if (similarAccountsAnchorElement) {
+            const closestList = similarAccountsAnchorElement.closest('ul');
+            if (closestList) {
+                const childAnchorElements =
+                    DOMHelper.findAllNodes<HTMLAnchorElement>(
+                        'li > a',
+                        closestList
+                    );
+                return childAnchorElements.map((link) => link.href);
+            }
+        }
+    };
+
+    await followUser();
+
+    if (DOMHelper.hasErrored) {
+        // We should populate with fields we were able to get
+        const errorTabData: ITabData = {
+            url: 'Failed to Retrieve URL',
+            name: 'Failed to Retrieve User',
         };
         const message: IContentScriptMessage = {
             source: 'ContentScript',
             signal: 'complete',
-            tabData: data,
+            tabData: errorTabData,
+            errorMessage: DOMHelper.errorType as string,
         };
-
         chrome.runtime.sendMessage(message);
-    }, getRandomInt(1, 2) * 1000);
+    } else {
+        const tabData: ITabData = {
+            url: 'test passed',
+            name: 'test passed',
+        };
+        const message: IContentScriptMessage = {
+            source: 'ContentScript',
+            signal: 'complete',
+            tabData: tabData,
+        };
+    }
 })();

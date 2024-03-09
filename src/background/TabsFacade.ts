@@ -160,10 +160,9 @@ class TabsFacadeClass {
         if (!tab.url) {
             throw new Error(NO_TAB_PERMISSION_ERROR);
         }
-        // Comment to Bypass Check During Testing to Avoid Instagram Rate Limit
-        // if (!INSTAGRAM_PROFILE_PAGE_REGEX.test(tab.url)) {
-        //     throw new Error(INVALID_PAGE_ERROR);
-        // }
+        if (!INSTAGRAM_PROFILE_PAGE_REGEX.test(tab.url)) {
+            throw new Error(INVALID_PAGE_ERROR);
+        }
         return true;
     }
 }
