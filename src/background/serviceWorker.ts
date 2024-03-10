@@ -36,7 +36,10 @@ const PopupMessageHandler: IPopupMessageHandler = {
 const ContentScriptMessageHandler: IContentScriptMessageHandler = {
     async processMessage(message, sender) {
         // Comment out close tab during testing
-        // if (sender.tab) TabsFacade.closeTab(sender.tab);
+        if (sender.tab) {
+            TabsFacade.closeTab(sender.tab);
+            TabsFacade.enqueueUrl(message.tabData.suggestedUrls);
+        }
         const tabData = message.tabData;
         const tabs = (await LocalStorageWrapper.get('tabs')) || [];
         tabs.push(tabData);

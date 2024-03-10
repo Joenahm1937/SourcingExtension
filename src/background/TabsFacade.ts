@@ -5,13 +5,13 @@ import {
 } from './constants';
 import { IValidatedTab } from './interfaces';
 
-const MOCK_SUGGESTED_PROFILE_URLS = Array(5).fill('https://www.google.com/');
+// const MOCK_SUGGESTED_PROFILE_URLS = Array(5).fill('https://www.google.com/');
 
 /**
  * A singleton class to manage and control the opening and processing of tabs.
  */
 class TabsFacadeClass {
-    private readonly maxTabs = 3;
+    private readonly maxTabs = 2;
     private static instance: TabsFacadeClass;
 
     /**
@@ -23,6 +23,7 @@ class TabsFacadeClass {
     private openTabsCount: number = 0;
     private openTabs: Set<number> = new Set();
 
+    private visited: Set<string> = new Set();
     private urlQueue: string[] = [];
     private enabled: boolean = false;
 
@@ -91,7 +92,8 @@ class TabsFacadeClass {
             }
         });
 
-        this.enqueueUrl(MOCK_SUGGESTED_PROFILE_URLS);
+        // Uncomment for testing with mock urls
+        // this.enqueueUrl(MOCK_SUGGESTED_PROFILE_URLS);
     };
 
     public flushUrlQueue = () => {
@@ -102,10 +104,13 @@ class TabsFacadeClass {
      * Enqueues a single URL or an array of URLs to the processing queue.
      * @param {string | string[]} url - The URL or URLs to add to the queue.
      */
-    private enqueueUrl(url: string | string[]): void {
+    public enqueueUrl(url: string | string[]): void {
         if (Array.isArray(url)) {
-            this.urlQueue.push(...url);
-        } else {
+            const nonVisitedUrls = url.filter(
+                (urlLink) => !this.visited.has(urlLink)
+            );
+            this.urlQueue.push(...nonVisitedUrls);
+        } else if (!this.visited.has(url)) {
             this.urlQueue.push(url);
         }
     }

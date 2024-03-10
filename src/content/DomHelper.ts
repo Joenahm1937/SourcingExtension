@@ -1,4 +1,3 @@
-import type { ErrorType } from './interfaces';
 import { ContentScriptError } from './constants';
 
 /**
@@ -7,7 +6,7 @@ import { ContentScriptError } from './constants';
 export class DOMHelperClass {
     private static instance: DOMHelperClass;
     hasErrored = false;
-    errorType: ErrorType = null;
+    errorMessage: string | null = null;
 
     /**
      * Returns the singleton instance of the class.
@@ -38,7 +37,7 @@ export class DOMHelperClass {
             return element as T;
         }
         this.hasErrored = true;
-        this.errorType = ContentScriptError.ELEMENT_NOT_FOUND;
+        this.errorMessage = ContentScriptError.ELEMENT_NOT_FOUND + queryString;
         return null;
     }
 
@@ -56,11 +55,37 @@ export class DOMHelperClass {
         const elements = node.querySelectorAll(queryString);
         if (elements.length === 0) {
             this.hasErrored = true;
-            this.errorType = ContentScriptError.ELEMENTS_NOT_FOUND;
+            this.errorMessage =
+                ContentScriptError.ELEMENTS_NOT_FOUND + queryString;
             return [];
         }
         // Type assertion is necessary as TypeScript cannot infer the correct type inside the array.
         return Array.from(elements) as T[];
+    }
+
+    /**
+     * Traverses up the DOM tree from a given node, attempting to find a node that matches the specified query string.
+     * If no matching node is found in the current node's ancestors, null is returned.
+     * @param queryString - A DOMString containing one or more selectors to match against.
+     * @param startNode - The node from which to start the search, moving up the DOM tree.
+     * @returns The first Element that matches the specified selector or null if no matches are found.
+     */
+    findNodeUpwards<T extends Element>(
+        queryString: string,
+        startNode: Element
+    ): T | null {
+        if (this.hasErrored) return null;
+        let currentNode: Element | null = startNode;
+        while (currentNode) {
+            const foundNode = currentNode.querySelector<T>(queryString);
+            if (foundNode) return foundNode;
+            currentNode = currentNode.parentElement;
+        }
+        // If no matching node is found after traversing up the DOM tree
+        this.hasErrored = true;
+        this.errorMessage =
+            ContentScriptError.ELEMENT_NOT_FOUND_IN_ANCESTRY + queryString;
+        return null;
     }
 
     /**
@@ -78,11 +103,12 @@ export class DOMHelperClass {
         const filteredElements = elementList.filter((element) => {
             return isRegex
                 ? pattern.test(element.innerText)
-                : element.innerText === pattern;
+                : element.innerText.toUpperCase() === pattern;
         });
         if (filteredElements.length === 0) {
             this.hasErrored = true;
-            this.errorType = ContentScriptError.NO_ELEMENT_CONTAINING_TEXT;
+            this.errorMessage =
+                ContentScriptError.NO_ELEMENT_CONTAINING_TEXT + pattern;
             return [];
         }
         return filteredElements;
@@ -110,7 +136,7 @@ export class DOMHelperClass {
         });
         if (noSingleHighest) {
             this.hasErrored = true;
-            this.errorType = ContentScriptError.NO_SINGLE_HIGHEST;
+            this.errorMessage = ContentScriptError.NO_SINGLE_HIGHEST;
             return null;
         }
         return highestElement;
@@ -122,11 +148,11 @@ export class DOMHelperClass {
      * @param {number} timeoutSeconds - The maximum time to wait for the element, in milliseconds.
      * @returns {Promise<Element | null>} A promise that resolves to the element if found within the timeout period, or null if not found or an error occurred.
      */
-    waitUntilElementPresent = (
+    waitUntilElementPresent<T extends Element>(
         queryString: string,
-        timeoutSeconds: number,
+        timeoutMs: number,
         node: Document | Element = document
-    ): Promise<Element | null> => {
+    ): Promise<T | null> {
         if (this.hasErrored) return Promise.resolve(null);
         return new Promise((resolve) => {
             const startTime = Date.now();
@@ -134,17 +160,85 @@ export class DOMHelperClass {
                 const element = node.querySelector(queryString);
                 if (element) {
                     clearInterval(interval);
-                    resolve(element);
-                } else if (Date.now() - startTime > timeoutSeconds) {
+                    resolve(element as T);
+                } else if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
                     this.hasErrored = true;
-                    this.errorType =
-                        ContentScriptError.ELEMENT_NOT_PRESENT_WITHIN_TIME;
+                    this.errorMessage =
+                        ContentScriptError.ELEMENT_NOT_PRESENT_WITHIN_TIME +
+                        queryString;
                     resolve(null);
                 }
             }, 100);
         });
-    };
+    }
+
+    /**
+     * Waits for an element containing specified text to be present in the DOM within a specified timeout period.
+     * @param text - The text to wait for within elements.
+     * @param timeoutMs - The maximum time to wait for the element, in milliseconds.
+     * @param node - The root node to start the search from. Defaults to the document.
+     * @returns A promise that resolves to the HTMLElement containing the specified text if found within the timeout period, or null if not found or an error occurred.
+     */
+    waitUntilElementContainingTextPresent<T extends HTMLElement>(
+        text: string,
+        timeoutMs: number,
+        node: Document | Element = document
+    ): Promise<T | null> {
+        if (this.hasErrored) return Promise.resolve(null);
+        return new Promise((resolve) => {
+            const startTime = Date.now();
+            const interval = setInterval(() => {
+                const elements = node.getElementsByTagName('*');
+                for (let i = 0; i < elements.length; i++) {
+                    if (elements[i].textContent?.toUpperCase().includes(text)) {
+                        clearInterval(interval);
+                        resolve(elements[i] as T);
+                        return;
+                    }
+                }
+                if (Date.now() - startTime > timeoutMs) {
+                    clearInterval(interval);
+                    this.hasErrored = true;
+                    this.errorMessage =
+                        ContentScriptError.ELEMENT_CONTAINING_TEXT_NOT_PRESENT_WITHIN_TIME +
+                        text;
+                    resolve(null);
+                }
+            }, 100);
+        });
+    }
+
+    /**
+     * Waits for at least one element to be present in the DOM matching a given query string within a specified timeout period.
+     * @param {string} queryString - The query selector to wait for.
+     * @param {number} timeoutSeconds - The maximum time to wait for the element, in milliseconds.
+     * @returns {Promise<Element[] | null>} A promise that resolves to the elements found when a match is found within the timeout period, or an empty array if no matches are found.
+     */
+    waitUntilSingleMatchPresent<T extends Element>(
+        queryString: string,
+        timeoutMs: number,
+        node: Document | Element = document
+    ): Promise<T[] | []> {
+        if (this.hasErrored) return Promise.resolve([]);
+        return new Promise((resolve) => {
+            const startTime = Date.now();
+            const interval = setInterval(() => {
+                const elements = node.querySelectorAll(queryString);
+                if (elements.length !== 0) {
+                    clearInterval(interval);
+                    resolve(Array.from(elements) as T[]);
+                } else if (Date.now() - startTime > timeoutMs) {
+                    clearInterval(interval);
+                    this.hasErrored = true;
+                    this.errorMessage =
+                        ContentScriptError.ELEMENT_NOT_PRESENT_WITHIN_TIME +
+                        queryString;
+                    resolve([]);
+                }
+            }, 100);
+        });
+    }
 }
 
 export const DOMHelper = DOMHelperClass.getInstance();

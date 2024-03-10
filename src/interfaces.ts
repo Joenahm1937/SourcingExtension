@@ -60,6 +60,7 @@ type SerializableArray = SerializableValue[];
 export interface ITabData extends SerializableObject {
     url: string;
     name: string;
+    suggestedUrls: string[];
 }
 
 export interface ILocalStorage {
