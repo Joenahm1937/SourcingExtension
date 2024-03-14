@@ -62,7 +62,7 @@ export interface ITabData extends SerializableObject {
     url: string;
     user: string;
     profileImageUrl?: string;
-    bioLinkUrl?: string;
+    bioLinkUrls?: string[];
     followerCount?: string;
     suggestedProfiles?: string[];
     errorMessage?: string;

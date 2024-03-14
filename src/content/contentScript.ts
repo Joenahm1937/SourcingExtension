@@ -109,14 +109,52 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
             return followerCountElement.innerText;
     };
 
-    const getBioLinkUrl = async (): Promise<string | undefined> => {
-        const bioLinkUrl =
-            await DOMHelper.waitUntilElementPresent<HTMLAnchorElement>(
-                '[href^="https://l.instagram.com"]',
+    const getBioLinkUrls = async (): Promise<string[] | undefined> => {
+        // Trying multi-link option first
+        const linkSVG = await DOMHelper.waitUntilElementPresent(
+            '[aria-label="Link icon"]',
+            MAX_ACTION_TIMEOUT_MS
+        );
+        const openLinkDialogBoxButton = linkSVG?.closest('button');
+        const bioLinks: string[] = [];
+        if (openLinkDialogBoxButton) {
+            openLinkDialogBoxButton.click();
+            const dialogBox = await DOMHelper.waitUntilElementPresent(
+                '[role="dialog"]',
                 MAX_ACTION_TIMEOUT_MS
             );
-        if (bioLinkUrl instanceof HTMLAnchorElement)
-            return bioLinkUrl.innerText;
+            if (dialogBox) {
+                const multiLinkUrls =
+                    await DOMHelper.waitUntilSingleMatchPresent<HTMLAnchorElement>(
+                        '[href^="https://l.instagram.com"]',
+                        MAX_ACTION_TIMEOUT_MS,
+                        dialogBox
+                    );
+                multiLinkUrls.forEach((a) => {
+                    const linkUrl = a.innerText.split('\n')[1];
+                    bioLinks.push(linkUrl);
+                });
+                const closeElement =
+                    await DOMHelper.waitUntilElementPresent<HTMLElement>(
+                        '[aria-label="Close"]',
+                        MAX_ACTION_TIMEOUT_MS,
+                        dialogBox
+                    );
+                closeElement?.click();
+            }
+        } else {
+            const singleLinkUrl =
+                await DOMHelper.waitUntilElementPresent<HTMLAnchorElement>(
+                    '[href^="https://l.instagram.com"]',
+                    MAX_ACTION_TIMEOUT_MS
+                );
+            if (singleLinkUrl instanceof HTMLAnchorElement)
+                return singleLinkUrl.innerText !==
+                    'Contact Uploading & Non-Users'
+                    ? [singleLinkUrl.innerText]
+                    : undefined;
+        }
+        return bioLinks;
     };
 
     // document.querySelector('[href^="https://l.instagram.com"]').href
@@ -128,7 +166,7 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
     const followerCount = await getFollowerCount();
     const suggestedProfiles = await getSuggestedProfiles();
     const profileImageUrl = await getProfileImageUrl();
-    const bioLinkUrl = await getBioLinkUrl();
+    const bioLinkUrls = await getBioLinkUrls();
     await unfollowUser();
     await sleep(1000);
 
@@ -139,7 +177,7 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
             url: document.URL,
             followerCount,
             profileImageUrl,
-            bioLinkUrl,
+            bioLinkUrls,
             suggestedProfiles,
             errorMessage,
         };
@@ -156,7 +194,7 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
             url: document.URL,
             followerCount,
             profileImageUrl,
-            bioLinkUrl,
+            bioLinkUrls,
             suggestedProfiles: suggestedProfiles || [],
         };
         const message: IContentScriptMessage = {

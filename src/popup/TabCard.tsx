@@ -4,7 +4,7 @@ import { ITabData } from '../interfaces';
 const PageCard = ({
     url,
     user,
-    bioLinkUrl,
+    bioLinkUrls,
     followerCount,
     suggestedProfiles,
     profileImageUrl,
@@ -33,17 +33,25 @@ const PageCard = ({
                     @{user}
                 </div>
                 <div>{followerCount}</div>
-                <a
-                    style={{ cursor: 'pointer' }}
-                    onClick={() =>
-                        chrome.tabs.create({
-                            active: true,
-                            url: `https://${bioLinkUrl}`,
-                        })
-                    }
-                >
-                    {bioLinkUrl}
-                </a>
+                <div>
+                    {bioLinkUrls?.map((link) => (
+                        <div>
+                            <a
+                                style={{ cursor: 'pointer' }}
+                                onClick={() =>
+                                    chrome.tabs.create({
+                                        active: true,
+                                        url: `https://${link}`,
+                                    })
+                                }
+                            >
+                                {link.length >= 15
+                                    ? `${link.substring(0, 15)}...`
+                                    : link}
+                            </a>
+                        </div>
+                    ))}
+                </div>
                 {suggestedProfiles ? (
                     <button
                         onClick={() =>
