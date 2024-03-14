@@ -10,6 +10,16 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
 
 // Instagram Profile Page Specific Content Script
 (async () => {
+    const sleep = (timeMs: number): Promise<void> => {
+        return new Promise((resolve) => setTimeout(resolve, timeMs));
+    };
+
+    const getNameFromUrl = (url: string): string => {
+        const match = url.match(/https:\/\/www\.instagram\.com\/(.+?)\//);
+        return match ? match[1] : '';
+    };
+    const user = getNameFromUrl(document.URL);
+
     const toggleFollowButton = async (text: string) => {
         const buttons =
             await DOMHelper.waitUntilSingleMatchPresent<HTMLElement>(
@@ -18,7 +28,6 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
             );
         const followButtons = DOMHelper.filterElementsByText(text, buttons);
         const mainFollowButton = DOMHelper.findHighestElement(followButtons);
-        console.log('MAINFOLLOWBUTTON', mainFollowButton, text);
         mainFollowButton?.click();
     };
 
@@ -46,12 +55,10 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
                 '[role="button"]',
                 dialogBox
             );
-            console.log('BUTTONS,', buttons);
             const unFollowButton = DOMHelper.filterElementsByText(
                 UNFOLLOW_BUTTON_TEXT,
                 buttons
             )[0];
-            console.log('unFollowButton,', unFollowButton);
             unFollowButton?.click();
         }
     };
@@ -83,33 +90,74 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
         }
     };
 
+    const getProfileImageUrl = async (): Promise<string | undefined> => {
+        const bioLinkUrl =
+            await DOMHelper.waitUntilElementPresent<HTMLImageElement>(
+                `[alt$="${user}\'s profile picture"]`,
+                MAX_ACTION_TIMEOUT_MS
+            );
+        if (bioLinkUrl instanceof HTMLImageElement) return bioLinkUrl.src;
+    };
+
+    const getFollowerCount = async (): Promise<string | undefined> => {
+        const followerCountElement =
+            await DOMHelper.waitUntilElementPresent<HTMLElement>(
+                '[href$="followers/"]',
+                MAX_ACTION_TIMEOUT_MS
+            );
+        if (followerCountElement instanceof HTMLElement)
+            return followerCountElement.innerText;
+    };
+
+    const getBioLinkUrl = async (): Promise<string | undefined> => {
+        const bioLinkUrl =
+            await DOMHelper.waitUntilElementPresent<HTMLAnchorElement>(
+                '[href^="https://l.instagram.com"]',
+                MAX_ACTION_TIMEOUT_MS
+            );
+        if (bioLinkUrl instanceof HTMLAnchorElement)
+            return bioLinkUrl.innerText;
+    };
+
+    // document.querySelector('[href^="https://l.instagram.com"]').href
+
     // We need to check if user is already following vs. network latency
     // We can probably use promise.race to test whether follow or unfollow button is present
     // If unfollow button, then we've already visited this profile and we can skip
     await followUser();
+    const followerCount = await getFollowerCount();
     const suggestedProfiles = await getSuggestedProfiles();
-    console.log(suggestedProfiles);
+    const profileImageUrl = await getProfileImageUrl();
+    const bioLinkUrl = await getBioLinkUrl();
     await unfollowUser();
+    await sleep(1000);
 
     if (DOMHelper.hasErrored) {
-        // We should populate with fields we were able to get
+        let errorMessage = DOMHelper.errorRootCause as string;
         const errorTabData: ITabData = {
-            url: DOMHelper.hasErrored.toString(),
-            name: DOMHelper.errorMessage as string,
-            suggestedUrls: [],
+            user,
+            url: document.URL,
+            followerCount,
+            profileImageUrl,
+            bioLinkUrl,
+            suggestedProfiles,
+            errorMessage,
         };
         const message: IContentScriptMessage = {
             source: 'ContentScript',
             signal: 'complete',
             tabData: errorTabData,
-            errorMessage: DOMHelper.errorMessage as string,
+            errorMessage,
         };
         chrome.runtime.sendMessage(message);
     } else {
         const tabData: ITabData = {
-            url: 'test passed',
-            name: JSON.stringify(suggestedProfiles),
-            suggestedUrls: suggestedProfiles || [],
+            user,
+            url: document.URL,
+            followerCount,
+            profileImageUrl,
+            bioLinkUrl,
+            suggestedProfiles: suggestedProfiles || [],
         };
         const message: IContentScriptMessage = {
             source: 'ContentScript',

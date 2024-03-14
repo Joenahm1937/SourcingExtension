@@ -49,6 +49,7 @@ export interface IContentScriptMessageHandler {
 }
 
 type SerializableValue =
+    | undefined
     | string
     | number
     | boolean
@@ -59,8 +60,12 @@ type SerializableArray = SerializableValue[];
 
 export interface ITabData extends SerializableObject {
     url: string;
-    name: string;
-    suggestedUrls: string[];
+    user: string;
+    profileImageUrl?: string;
+    bioLinkUrl?: string;
+    followerCount?: string;
+    suggestedProfiles?: string[];
+    errorMessage?: string;
 }
 
 export interface ILocalStorage {

@@ -38,24 +38,18 @@ const ContentScriptMessageHandler: IContentScriptMessageHandler = {
         // Comment out close tab during testing
         if (sender.tab) {
             TabsFacade.closeTab(sender.tab);
-            TabsFacade.enqueueUrl(message.tabData.suggestedUrls);
+            if (message.tabData.suggestedProfiles)
+                TabsFacade.enqueueUrl(message.tabData.suggestedProfiles);
         }
         const tabData = message.tabData;
         const tabs = (await LocalStorageWrapper.get('tabs')) || [];
         tabs.push(tabData);
         await LocalStorageWrapper.set('tabs', tabs);
-        if (message.errorMessage) {
-            // TODO: Handle Single Content Script Failures
-            // We can simply alert user that there was a failure
-            // Failed Content Script Should Populate ITabData so we still create a card
-            // That Card will have the user or url at the very least that it failed on
-        } else {
-            const workerMessage: IWorkerMessage = {
-                source: 'Worker',
-                signal: 'refresh',
-            };
-            chrome.runtime.sendMessage(workerMessage);
-        }
+        const workerMessage: IWorkerMessage = {
+            source: 'Worker',
+            signal: 'refresh',
+        };
+        chrome.runtime.sendMessage(workerMessage);
     },
 };
 

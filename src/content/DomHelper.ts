@@ -6,7 +6,8 @@ import { ContentScriptError } from './constants';
 export class DOMHelperClass {
     private static instance: DOMHelperClass;
     hasErrored = false;
-    errorMessage: string | null = null;
+    errorRootCause: string | null = null;
+    errorStack: string[] = [];
 
     /**
      * Returns the singleton instance of the class.
@@ -29,15 +30,17 @@ export class DOMHelperClass {
         queryString: string,
         node: Document | Element = document
     ): T | null {
-        if (this.hasErrored) return null;
         const element = node.querySelector(queryString);
         // Assuming callers are responsible for ensuring the type safety post-query.
         // Type assertion is necessary as TypeScript cannot infer the correct type.
         if (element) {
             return element as T;
         }
-        this.hasErrored = true;
-        this.errorMessage = ContentScriptError.ELEMENT_NOT_FOUND + queryString;
+        this.setErrorRootCause(
+            'findNode',
+            ContentScriptError.ELEMENT_NOT_FOUND,
+            queryString
+        );
         return null;
     }
 
@@ -51,12 +54,13 @@ export class DOMHelperClass {
         queryString: string,
         node: Document | Element = document
     ): T[] {
-        if (this.hasErrored) return [];
         const elements = node.querySelectorAll(queryString);
         if (elements.length === 0) {
-            this.hasErrored = true;
-            this.errorMessage =
-                ContentScriptError.ELEMENTS_NOT_FOUND + queryString;
+            this.setErrorRootCause(
+                'findAllNodes',
+                ContentScriptError.ELEMENTS_NOT_FOUND,
+                queryString
+            );
             return [];
         }
         // Type assertion is necessary as TypeScript cannot infer the correct type inside the array.
@@ -74,7 +78,6 @@ export class DOMHelperClass {
         queryString: string,
         startNode: Element
     ): T | null {
-        if (this.hasErrored) return null;
         let currentNode: Element | null = startNode;
         while (currentNode) {
             const foundNode = currentNode.querySelector<T>(queryString);
@@ -82,9 +85,11 @@ export class DOMHelperClass {
             currentNode = currentNode.parentElement;
         }
         // If no matching node is found after traversing up the DOM tree
-        this.hasErrored = true;
-        this.errorMessage =
-            ContentScriptError.ELEMENT_NOT_FOUND_IN_ANCESTRY + queryString;
+        this.setErrorRootCause(
+            'findNodeUpwards',
+            ContentScriptError.ELEMENT_NOT_FOUND_IN_ANCESTRY,
+            queryString
+        );
         return null;
     }
 
@@ -98,7 +103,6 @@ export class DOMHelperClass {
         pattern: string | RegExp,
         elementList: HTMLElement[]
     ): HTMLElement[] => {
-        if (this.hasErrored) return [];
         const isRegex = pattern instanceof RegExp;
         const filteredElements = elementList.filter((element) => {
             return isRegex
@@ -106,9 +110,11 @@ export class DOMHelperClass {
                 : element.innerText.toUpperCase() === pattern;
         });
         if (filteredElements.length === 0) {
-            this.hasErrored = true;
-            this.errorMessage =
-                ContentScriptError.NO_ELEMENT_CONTAINING_TEXT + pattern;
+            this.setErrorRootCause(
+                'filterElementsByText',
+                ContentScriptError.NO_ELEMENT_CONTAINING_TEXT,
+                pattern.toString()
+            );
             return [];
         }
         return filteredElements;
@@ -120,7 +126,6 @@ export class DOMHelperClass {
      * @returns The highest HTMLElement in the DOM, or null if no unique highest element is found.
      */
     findHighestElement = (elementList: HTMLElement[]): HTMLElement | null => {
-        if (this.hasErrored) return null;
         let noSingleHighest = false;
         const highestElement = elementList.reduce((highest, current) => {
             const position = highest.compareDocumentPosition(current);
@@ -135,8 +140,11 @@ export class DOMHelperClass {
             }
         });
         if (noSingleHighest) {
-            this.hasErrored = true;
-            this.errorMessage = ContentScriptError.NO_SINGLE_HIGHEST;
+            this.setErrorRootCause(
+                'findHighestElement',
+                ContentScriptError.NO_SINGLE_HIGHEST,
+                elementList.join(',')
+            );
             return null;
         }
         return highestElement;
@@ -153,7 +161,6 @@ export class DOMHelperClass {
         timeoutMs: number,
         node: Document | Element = document
     ): Promise<T | null> {
-        if (this.hasErrored) return Promise.resolve(null);
         return new Promise((resolve) => {
             const startTime = Date.now();
             const interval = setInterval(() => {
@@ -163,10 +170,11 @@ export class DOMHelperClass {
                     resolve(element as T);
                 } else if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
-                    this.hasErrored = true;
-                    this.errorMessage =
-                        ContentScriptError.ELEMENT_NOT_PRESENT_WITHIN_TIME +
-                        queryString;
+                    this.setErrorRootCause(
+                        'waitUntilElementPresent',
+                        ContentScriptError.ELEMENT_NOT_PRESENT_WITHIN_TIME,
+                        queryString
+                    );
                     resolve(null);
                 }
             }, 100);
@@ -185,7 +193,6 @@ export class DOMHelperClass {
         timeoutMs: number,
         node: Document | Element = document
     ): Promise<T | null> {
-        if (this.hasErrored) return Promise.resolve(null);
         return new Promise((resolve) => {
             const startTime = Date.now();
             const interval = setInterval(() => {
@@ -199,10 +206,11 @@ export class DOMHelperClass {
                 }
                 if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
-                    this.hasErrored = true;
-                    this.errorMessage =
-                        ContentScriptError.ELEMENT_CONTAINING_TEXT_NOT_PRESENT_WITHIN_TIME +
-                        text;
+                    this.setErrorRootCause(
+                        'waitUntilElementContainingTextPresent',
+                        ContentScriptError.ELEMENT_CONTAINING_TEXT_NOT_PRESENT_WITHIN_TIME,
+                        text
+                    );
                     resolve(null);
                 }
             }, 100);
@@ -220,7 +228,6 @@ export class DOMHelperClass {
         timeoutMs: number,
         node: Document | Element = document
     ): Promise<T[] | []> {
-        if (this.hasErrored) return Promise.resolve([]);
         return new Promise((resolve) => {
             const startTime = Date.now();
             const interval = setInterval(() => {
@@ -230,14 +237,34 @@ export class DOMHelperClass {
                     resolve(Array.from(elements) as T[]);
                 } else if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
-                    this.hasErrored = true;
-                    this.errorMessage =
-                        ContentScriptError.ELEMENT_NOT_PRESENT_WITHIN_TIME +
-                        queryString;
+                    this.setErrorRootCause(
+                        'waitUntilSingleMatchPresent',
+                        ContentScriptError.ELEMENT_NOT_PRESENT_WITHIN_TIME,
+                        queryString
+                    );
                     resolve([]);
                 }
             }, 100);
         });
+    }
+
+    /**
+     * Logs an error message with the method name, ContentScriptError, and queryString.
+     * @param methodName - The name of the method logging the error.
+     * @param error - The ContentScriptError to log.
+     * @param identifier - The identifier involved in the error.
+     */
+    private setErrorRootCause(
+        methodName: string,
+        error: (typeof ContentScriptError)[keyof typeof ContentScriptError],
+        identifier: string
+    ): void {
+        const errorMessage = `ERROR: ${methodName}(): ${identifier} ${error}`;
+        if (!this.hasErrored) {
+            this.errorRootCause = errorMessage;
+            this.hasErrored = true;
+        }
+        this.errorStack.push(errorMessage);
     }
 }
 
