@@ -1,114 +1,120 @@
 import type { IContentScriptMessage, ITabData } from '../interfaces';
 import { DOMHelper } from './DomHelper';
 
-const FOLLOW_BUTTON_TEXT = 'FOLLOW'; //Can be FOLLOW or FOLLOW BACK
-const FOLLOWING_BUTTON_TEXT = 'FOLLOWING';
-const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
+const BUTTON_TEXTS = {
+    follow: 'FOLLOW',
+    following: 'FOLLOWING',
+    unfollow: 'UNFOLLOW',
+};
 
-// Instagram Profile Page Specific Content Script
-(async () => {
-    const sleep = (timeMs: number): Promise<void> => {
-        return new Promise((resolve) => setTimeout(resolve, timeMs));
-    };
+// Utility function to pause execution for a given time
+const sleep = (timeMs: number): Promise<void> =>
+    new Promise((resolve) => setTimeout(resolve, timeMs));
 
-    const getNameFromUrl = (url: string): string => {
-        const match = url.match(/https:\/\/www\.instagram\.com\/(.+?)\//);
-        return match ? match[1] : '';
-    };
-    const user = getNameFromUrl(document.URL);
+// Extracts username from the Instagram profile URL
+const getUsernameFromUrl = (url: string): string => {
+    const match = url.match(/https:\/\/www\.instagram\.com\/(.+?)\//);
+    return match ? match[1] : '';
+};
 
-    const toggleFollowButton = async (text: string) => {
-        const buttons = await DOMHelper.findAllNodes<HTMLElement>('button');
-        const followButtons = DOMHelper.filterElementsByText(text, buttons);
-        const mainFollowButton = DOMHelper.findHighestElement(followButtons);
-        mainFollowButton?.click();
-    };
+// Toggles follow/unfollow button based on text
+const toggleFollowButton = async (buttonText: string): Promise<void> => {
+    const buttons = await DOMHelper.findAllNodes<HTMLElement>('button');
+    const targetButtons = DOMHelper.filterElementsByText(buttonText, buttons);
+    const mainButton = DOMHelper.findHighestElement(targetButtons);
+    mainButton?.click();
+};
 
-    const followUser = async () => {
-        toggleFollowButton(FOLLOW_BUTTON_TEXT);
-    };
+// Follows the user
+const followUser = (): Promise<void> => toggleFollowButton(BUTTON_TEXTS.follow);
 
-    const unfollowUser = async () => {
-        await DOMHelper.findNodeByText(FOLLOWING_BUTTON_TEXT);
-        toggleFollowButton(FOLLOWING_BUTTON_TEXT);
-        const dialogBox = await DOMHelper.findNode('[role="dialog"]');
-        if (dialogBox) {
-            await DOMHelper.findNodeByText(UNFOLLOW_BUTTON_TEXT, dialogBox);
-            const buttons = await DOMHelper.findAllNodes<HTMLElement>(
+// Unfollows the user
+const unfollowUser = async (): Promise<void> => {
+    await toggleFollowButton(BUTTON_TEXTS.following);
+    const dialogBox = await DOMHelper.findNode('[role="dialog"]');
+    if (dialogBox) {
+        await DOMHelper.findNodeByText(BUTTON_TEXTS.unfollow, dialogBox);
+        const unFollowButton = DOMHelper.filterElementsByText(
+            BUTTON_TEXTS.unfollow,
+            await DOMHelper.findAllNodes<HTMLElement>(
                 '[role="button"]',
                 dialogBox
-            );
-            const unFollowButton = DOMHelper.filterElementsByText(
-                UNFOLLOW_BUTTON_TEXT,
-                buttons
-            )[0];
-            unFollowButton?.click();
-        }
-    };
+            )
+        )[0];
+        unFollowButton?.click();
+    }
+};
 
-    const getSuggestedProfiles = async (): Promise<string[] | undefined> => {
-        const similarAccountsAnchorElement = await DOMHelper.findNode(
-            '[href$="similar_accounts/"]'
+// Fetches suggested profiles
+const getSuggestedProfiles = async (): Promise<string[] | undefined> => {
+    const anchorElement = await DOMHelper.findNode(
+        '[href$="similar_accounts/"]'
+    );
+    if (anchorElement) {
+        const listElement = DOMHelper.findNodeUpwards<HTMLUListElement>(
+            'ul',
+            anchorElement
         );
-        if (similarAccountsAnchorElement) {
-            const similarAccountsList =
-                DOMHelper.findNodeUpwards<HTMLUListElement>(
-                    'ul',
-                    similarAccountsAnchorElement
+        if (listElement) {
+            const childAnchorElements =
+                await DOMHelper.findAllNodes<HTMLAnchorElement>(
+                    'a',
+                    listElement
                 );
-            if (similarAccountsList) {
-                const childAnchorElements =
-                    await DOMHelper.findAllNodes<HTMLAnchorElement>(
-                        'a',
-                        similarAccountsList
-                    );
-                const uniqueLinks = new Set<string>();
-                childAnchorElements.forEach((link) =>
-                    uniqueLinks.add(link.href)
-                );
-                return Array.from(uniqueLinks);
-            }
+            const uniqueLinks = new Set<string>();
+            childAnchorElements.forEach((link) => uniqueLinks.add(link.href));
+            return Array.from(uniqueLinks);
         }
-    };
+    }
+};
 
-    const getProfileImageUrl = async (): Promise<string | undefined> => {
-        const profileImageUrl = await DOMHelper.findNode<HTMLImageElement>(
-            `[alt$="${user}\'s profile picture"]`
-        );
-        if (profileImageUrl instanceof HTMLImageElement)
-            return profileImageUrl.src;
-    };
+// Retrieves the profile image URL
+const getProfileImageUrl = async (
+    username: string
+): Promise<string | undefined> => {
+    const imageElement = await DOMHelper.findNode<HTMLImageElement>(
+        `[alt$="${username}'s profile picture"]`
+    );
+    return imageElement?.src;
+};
 
-    const getFollowerCount = async (): Promise<string | undefined> => {
-        const followerCountElement = await DOMHelper.findNode<HTMLElement>(
-            '[href$="followers/"]'
-        );
-        if (followerCountElement instanceof HTMLElement)
-            return followerCountElement.innerText;
-    };
+// Obtains follower count
+const getFollowerCount = async (): Promise<string | undefined> => {
+    const followerCountElement = await DOMHelper.findNode<HTMLElement>(
+        '[href$="followers/"]'
+    );
+    return followerCountElement?.innerText;
+};
 
-    const getBioLinkUrls = async (): Promise<string[]> => {
-        // Trying multi-link option first
-        const linkSVG = await DOMHelper.findNode('[aria-label="Link icon"]');
-        const openLinkDialogBoxButton = linkSVG?.closest('button');
-        const bioLinks: string[] = [];
+// Extracts bio link URLs
+const getBioLinkUrls = async (): Promise<string[]> => {
+    const bioLinks: string[] = [];
+    const linkSVG = await DOMHelper.findNode('[aria-label="Link icon"]');
+
+    if (linkSVG) {
+        // Clicks the button if there's a multi-link (i.e., link tree in bio)
+        const openLinkDialogBoxButton = linkSVG.closest('button');
         if (openLinkDialogBoxButton) {
             openLinkDialogBoxButton.click();
+
+            // Waits for the dialog box to appear after click event
             const dialogBox = await DOMHelper.findNode('[role="dialog"]');
             if (dialogBox) {
+                // Extracts all links within the dialog
                 const multiLinkUrls =
                     await DOMHelper.findAllNodes<HTMLAnchorElement>(
                         '[href^="https://l.instagram.com"]',
                         dialogBox
                     );
-                multiLinkUrls.forEach((a) => {
-                    const linkUrlContainer = a.innerText.split('\n');
-                    const linkUrl =
-                        linkUrlContainer.length > 1
-                            ? linkUrlContainer[1]
-                            : linkUrlContainer[0];
+                multiLinkUrls.forEach((linkElement) => {
+                    const linkText = linkElement.innerText;
+                    const linkUrl = linkText.includes('\n')
+                        ? linkText.split('\n')[1]
+                        : linkText; // Assumes URL is always after the newline if present
                     bioLinks.push(linkUrl);
                 });
+
+                // Closes the dialog box to clean up UI
                 const closeElement = await DOMHelper.findNode<HTMLElement>(
                     '[aria-label="Close"]',
                     dialogBox
@@ -116,60 +122,49 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
                 closeElement?.click();
             }
         } else {
-            const singleLinkUrl = await DOMHelper.findNode<HTMLAnchorElement>(
-                '[href^="https://l.instagram.com"]'
-            );
+            // Handles single bio link scenario directly without opening a dialog
+            const singleLinkUrlElement =
+                await DOMHelper.findNode<HTMLAnchorElement>(
+                    '[href^="https://l.instagram.com"]'
+                );
             if (
-                singleLinkUrl instanceof HTMLAnchorElement &&
-                singleLinkUrl.innerText !== 'Contact Uploading & Non-Users'
+                singleLinkUrlElement &&
+                singleLinkUrlElement.innerText !==
+                    'Contact Uploading & Non-Users'
             ) {
-                bioLinks.push(singleLinkUrl.innerText);
+                bioLinks.push(singleLinkUrlElement.innerText);
             }
         }
-        return bioLinks;
+    }
+
+    return bioLinks;
+};
+
+(async () => {
+    const username = getUsernameFromUrl(document.URL);
+
+    await followUser();
+
+    // Collect profile data
+    const profileData: ITabData = {
+        user: username,
+        url: document.URL,
+        followerCount: await getFollowerCount(),
+        profileImageUrl: await getProfileImageUrl(username),
+        bioLinkUrls: await getBioLinkUrls(),
+        suggestedProfiles: await getSuggestedProfiles(),
     };
 
-    // We need to check if user is already following vs. network latency
-    // We can probably use promise.race to test whether follow or unfollow button is present
-    // If unfollow button, then we've already visited this profile and we can skip
-    await followUser();
-    const followerCount = await getFollowerCount();
-    const suggestedProfiles = await getSuggestedProfiles();
-    const profileImageUrl = await getProfileImageUrl();
-    const bioLinkUrls = await getBioLinkUrls();
     await unfollowUser();
     await sleep(1000);
 
-    if (DOMHelper.hasErrored) {
-        const errorTabData: ITabData = {
-            user,
-            url: document.URL,
-            followerCount,
-            profileImageUrl,
-            bioLinkUrls,
-            suggestedProfiles,
-            errorStack: DOMHelper.errorStack,
-        };
-        const message: IContentScriptMessage = {
-            source: 'ContentScript',
-            signal: 'complete',
-            tabData: errorTabData,
-        };
-        chrome.runtime.sendMessage(message);
-    } else {
-        const tabData: ITabData = {
-            user,
-            url: document.URL,
-            followerCount,
-            profileImageUrl,
-            bioLinkUrls,
-            suggestedProfiles: suggestedProfiles || [],
-        };
-        const message: IContentScriptMessage = {
-            source: 'ContentScript',
-            signal: 'complete',
-            tabData: tabData,
-        };
-        chrome.runtime.sendMessage(message);
-    }
+    // Send data to background script or handle errors
+    const message: IContentScriptMessage = {
+        source: 'ContentScript',
+        signal: 'complete',
+        tabData: DOMHelper.hasErrored
+            ? { ...profileData, errorStack: DOMHelper.errorStack }
+            : profileData,
+    };
+    chrome.runtime.sendMessage(message);
 })();
