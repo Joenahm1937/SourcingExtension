@@ -5,13 +5,11 @@ import {
 } from './constants';
 import { IValidatedTab } from './interfaces';
 
-// const MOCK_SUGGESTED_PROFILE_URLS = Array(5).fill('https://www.google.com/');
-
 /**
  * A singleton class to manage and control the opening and processing of tabs.
  */
 class TabsFacadeClass {
-    private readonly maxTabs = 4;
+    private readonly maxTabs = 5;
     private static instance: TabsFacadeClass;
     private openTabsCount: number = 0;
 

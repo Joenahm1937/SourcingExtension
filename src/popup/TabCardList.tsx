@@ -1,4 +1,5 @@
 import type { ITabData } from '../interfaces';
+import './TabCard.css';
 import TabCard from './TabCard';
 
 const TabCardList = ({ tabs }: { tabs: ITabData[] }) => (

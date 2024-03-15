@@ -1,0 +1,64 @@
+.tabs {
+    list-style: none;
+    padding: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.tab-card {
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4);
+    padding: 1em;
+    transition: transform 0.2s ease;
+}
+
+.tab-card:hover {
+    transform: translateY(-0.5em);
+}
+
+.tab-card-profile {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 0.5em;
+    font-size: 1.4em;
+}
+
+.tab-card-profile-image {
+    border-radius: 50%;
+    width: 50%;
+    margin-bottom: 0.5em;
+}
+
+.tab-card-link {
+    cursor: pointer;
+    display: block;
+    margin: 0.25em 0;
+    color: #007bff;
+    font-size: 1.1em;
+    text-decoration: none;
+}
+
+.tab-card-link:hover {
+    text-decoration: underline;
+}
+
+.tab-card h5 {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    font-size: 1.1em;
+}
+
+.tab-card .suggested-profile {
+    cursor: pointer;
+    display: block;
+    margin: 0.25em 0;
+    color: #007bff;
+    text-decoration: none;
+}
+
+.tab-card .suggested-profile:hover {
+    text-decoration: underline;
+}

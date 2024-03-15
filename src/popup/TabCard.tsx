@@ -1,7 +1,7 @@
+import type { ITabData } from '../interfaces';
 import { useState } from 'react';
-import { ITabData } from '../interfaces';
 
-const PageCard = ({
+const TabCard = ({
     url,
     user,
     bioLinkUrls,
@@ -17,18 +17,13 @@ const PageCard = ({
         <li className="tab-card">
             <div>
                 <div
-                    style={{
-                        cursor: 'pointer',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                    }}
+                    className="tab-card-profile"
                     onClick={() => chrome.tabs.create({ active: true, url })}
                 >
                     <img
                         crossOrigin="anonymous"
                         src={profileImageUrl}
-                        style={{ borderRadius: '50%', width: '50%' }} // Smaller size and circular
+                        className="tab-card-profile-image"
                     />
                     @{user}
                 </div>
@@ -37,7 +32,7 @@ const PageCard = ({
                     {bioLinkUrls?.map((link) => (
                         <div>
                             <a
-                                style={{ cursor: 'pointer' }}
+                                className="tab-card-link"
                                 onClick={() =>
                                     chrome.tabs.create({
                                         active: true,
@@ -71,7 +66,7 @@ const PageCard = ({
                         {suggestedProfiles?.map((suggestedProfile) => {
                             return (
                                 <div
-                                    style={{ cursor: 'pointer' }}
+                                    className="suggested-profile"
                                     onClick={() =>
                                         chrome.tabs.create({
                                             active: true,
@@ -79,7 +74,7 @@ const PageCard = ({
                                         })
                                     }
                                 >
-                                    {getNameFromUrl(suggestedProfile)}
+                                    {`@${getNameFromUrl(suggestedProfile)}`}
                                 </div>
                             );
                         })}
@@ -105,4 +100,4 @@ const getNameFromUrl = (url: string): string => {
     return match ? match[1] : '';
 };
 
-export default PageCard;
+export default TabCard;
