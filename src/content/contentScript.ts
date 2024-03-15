@@ -1,9 +1,6 @@
 import type { IContentScriptMessage, ITabData } from '../interfaces';
 import { DOMHelper } from './DomHelper';
 
-// TODO: Make all queryStrings constants and move to constants file
-const MAX_ACTION_TIMEOUT_MS = 20000;
-
 const FOLLOW_BUTTON_TEXT = 'FOLLOW'; //Can be FOLLOW or FOLLOW BACK
 const FOLLOWING_BUTTON_TEXT = 'FOLLOWING';
 const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
@@ -21,11 +18,7 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
     const user = getNameFromUrl(document.URL);
 
     const toggleFollowButton = async (text: string) => {
-        const buttons =
-            await DOMHelper.waitUntilSingleMatchPresent<HTMLElement>(
-                'button',
-                MAX_ACTION_TIMEOUT_MS
-            );
+        const buttons = await DOMHelper.findAllNodes<HTMLElement>('button');
         const followButtons = DOMHelper.filterElementsByText(text, buttons);
         const mainFollowButton = DOMHelper.findHighestElement(followButtons);
         mainFollowButton?.click();
@@ -36,22 +29,12 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
     };
 
     const unfollowUser = async () => {
-        await DOMHelper.waitUntilElementContainingTextPresent(
-            FOLLOWING_BUTTON_TEXT,
-            MAX_ACTION_TIMEOUT_MS
-        );
+        await DOMHelper.findNodeByText(FOLLOWING_BUTTON_TEXT);
         toggleFollowButton(FOLLOWING_BUTTON_TEXT);
-        const dialogBox = await DOMHelper.waitUntilElementPresent(
-            '[role="dialog"]',
-            MAX_ACTION_TIMEOUT_MS
-        );
+        const dialogBox = await DOMHelper.findNode('[role="dialog"]');
         if (dialogBox) {
-            await DOMHelper.waitUntilElementContainingTextPresent(
-                UNFOLLOW_BUTTON_TEXT,
-                MAX_ACTION_TIMEOUT_MS,
-                dialogBox
-            );
-            const buttons = DOMHelper.findAllNodes<HTMLElement>(
+            await DOMHelper.findNodeByText(UNFOLLOW_BUTTON_TEXT, dialogBox);
+            const buttons = await DOMHelper.findAllNodes<HTMLElement>(
                 '[role="button"]',
                 dialogBox
             );
@@ -64,11 +47,9 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
     };
 
     const getSuggestedProfiles = async (): Promise<string[] | undefined> => {
-        const similarAccountsAnchorElement =
-            await DOMHelper.waitUntilElementPresent(
-                '[href$="similar_accounts/"]',
-                MAX_ACTION_TIMEOUT_MS
-            );
+        const similarAccountsAnchorElement = await DOMHelper.findNode(
+            '[href$="similar_accounts/"]'
+        );
         if (similarAccountsAnchorElement) {
             const similarAccountsList =
                 DOMHelper.findNodeUpwards<HTMLUListElement>(
@@ -77,7 +58,7 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
                 );
             if (similarAccountsList) {
                 const childAnchorElements =
-                    DOMHelper.findAllNodes<HTMLAnchorElement>(
+                    await DOMHelper.findAllNodes<HTMLAnchorElement>(
                         'a',
                         similarAccountsList
                     );
@@ -91,73 +72,62 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
     };
 
     const getProfileImageUrl = async (): Promise<string | undefined> => {
-        const bioLinkUrl =
-            await DOMHelper.waitUntilElementPresent<HTMLImageElement>(
-                `[alt$="${user}\'s profile picture"]`,
-                MAX_ACTION_TIMEOUT_MS
-            );
-        if (bioLinkUrl instanceof HTMLImageElement) return bioLinkUrl.src;
+        const profileImageUrl = await DOMHelper.findNode<HTMLImageElement>(
+            `[alt$="${user}\'s profile picture"]`
+        );
+        if (profileImageUrl instanceof HTMLImageElement)
+            return profileImageUrl.src;
     };
 
     const getFollowerCount = async (): Promise<string | undefined> => {
-        const followerCountElement =
-            await DOMHelper.waitUntilElementPresent<HTMLElement>(
-                '[href$="followers/"]',
-                MAX_ACTION_TIMEOUT_MS
-            );
+        const followerCountElement = await DOMHelper.findNode<HTMLElement>(
+            '[href$="followers/"]'
+        );
         if (followerCountElement instanceof HTMLElement)
             return followerCountElement.innerText;
     };
 
-    const getBioLinkUrls = async (): Promise<string[] | undefined> => {
+    const getBioLinkUrls = async (): Promise<string[]> => {
         // Trying multi-link option first
-        const linkSVG = await DOMHelper.waitUntilElementPresent(
-            '[aria-label="Link icon"]',
-            MAX_ACTION_TIMEOUT_MS
-        );
+        const linkSVG = await DOMHelper.findNode('[aria-label="Link icon"]');
         const openLinkDialogBoxButton = linkSVG?.closest('button');
         const bioLinks: string[] = [];
         if (openLinkDialogBoxButton) {
             openLinkDialogBoxButton.click();
-            const dialogBox = await DOMHelper.waitUntilElementPresent(
-                '[role="dialog"]',
-                MAX_ACTION_TIMEOUT_MS
-            );
+            const dialogBox = await DOMHelper.findNode('[role="dialog"]');
             if (dialogBox) {
                 const multiLinkUrls =
-                    await DOMHelper.waitUntilSingleMatchPresent<HTMLAnchorElement>(
+                    await DOMHelper.findAllNodes<HTMLAnchorElement>(
                         '[href^="https://l.instagram.com"]',
-                        MAX_ACTION_TIMEOUT_MS,
                         dialogBox
                     );
                 multiLinkUrls.forEach((a) => {
-                    const linkUrl = a.innerText.split('\n')[1];
+                    const linkUrlContainer = a.innerText.split('\n');
+                    const linkUrl =
+                        linkUrlContainer.length > 1
+                            ? linkUrlContainer[1]
+                            : linkUrlContainer[0];
                     bioLinks.push(linkUrl);
                 });
-                const closeElement =
-                    await DOMHelper.waitUntilElementPresent<HTMLElement>(
-                        '[aria-label="Close"]',
-                        MAX_ACTION_TIMEOUT_MS,
-                        dialogBox
-                    );
+                const closeElement = await DOMHelper.findNode<HTMLElement>(
+                    '[aria-label="Close"]',
+                    dialogBox
+                );
                 closeElement?.click();
             }
         } else {
-            const singleLinkUrl =
-                await DOMHelper.waitUntilElementPresent<HTMLAnchorElement>(
-                    '[href^="https://l.instagram.com"]',
-                    MAX_ACTION_TIMEOUT_MS
-                );
-            if (singleLinkUrl instanceof HTMLAnchorElement)
-                return singleLinkUrl.innerText !==
-                    'Contact Uploading & Non-Users'
-                    ? [singleLinkUrl.innerText]
-                    : undefined;
+            const singleLinkUrl = await DOMHelper.findNode<HTMLAnchorElement>(
+                '[href^="https://l.instagram.com"]'
+            );
+            if (
+                singleLinkUrl instanceof HTMLAnchorElement &&
+                singleLinkUrl.innerText !== 'Contact Uploading & Non-Users'
+            ) {
+                bioLinks.push(singleLinkUrl.innerText);
+            }
         }
         return bioLinks;
     };
-
-    // document.querySelector('[href^="https://l.instagram.com"]').href
 
     // We need to check if user is already following vs. network latency
     // We can probably use promise.race to test whether follow or unfollow button is present
@@ -171,7 +141,6 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
     await sleep(1000);
 
     if (DOMHelper.hasErrored) {
-        let errorMessage = DOMHelper.errorRootCause as string;
         const errorTabData: ITabData = {
             user,
             url: document.URL,
@@ -179,13 +148,12 @@ const UNFOLLOW_BUTTON_TEXT = 'UNFOLLOW';
             profileImageUrl,
             bioLinkUrls,
             suggestedProfiles,
-            errorMessage,
+            errorStack: DOMHelper.errorStack,
         };
         const message: IContentScriptMessage = {
             source: 'ContentScript',
             signal: 'complete',
             tabData: errorTabData,
-            errorMessage,
         };
         chrome.runtime.sendMessage(message);
     } else {

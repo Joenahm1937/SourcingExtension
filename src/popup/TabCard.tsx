@@ -8,7 +8,7 @@ const PageCard = ({
     followerCount,
     suggestedProfiles,
     profileImageUrl,
-    errorMessage,
+    errorStack,
 }: ITabData) => {
     const [errorVisible, setErrorVisible] = useState(false);
     const [suggestionsVisible, setSuggestionsVisible] = useState(false);
@@ -45,7 +45,7 @@ const PageCard = ({
                                     })
                                 }
                             >
-                                {link.length >= 15
+                                {typeof link === 'string' && link.length >= 15
                                     ? `${link.substring(0, 15)}...`
                                     : link}
                             </a>
@@ -85,7 +85,7 @@ const PageCard = ({
                         })}
                     </div>
                 ) : null}
-                {errorMessage ? (
+                {errorStack ? (
                     <button
                         onClick={() =>
                             setErrorVisible((prevVisibility) => !prevVisibility)
@@ -94,7 +94,7 @@ const PageCard = ({
                         Toggle Error
                     </button>
                 ) : null}
-                {errorVisible ? <div>{errorMessage}</div> : null}
+                {errorVisible ? <div>{errorStack?.join(',')}</div> : null}
             </div>
         </li>
     );

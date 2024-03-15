@@ -24,7 +24,6 @@ export interface IWorkerMessage extends IMessage {
 export interface IContentScriptMessage extends IMessage {
     signal: (typeof CONTENT_SCRIPT_SIGNAL)[keyof typeof CONTENT_SCRIPT_SIGNAL];
     tabData: ITabData;
-    errorMessage?: string;
 }
 
 export interface IPopupMessageHandler {
@@ -65,7 +64,7 @@ export interface ITabData extends SerializableObject {
     bioLinkUrls?: string[];
     followerCount?: string;
     suggestedProfiles?: string[];
-    errorMessage?: string;
+    errorStack?: string[];
 }
 
 export interface ILocalStorage {
