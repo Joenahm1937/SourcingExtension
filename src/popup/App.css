@@ -5,6 +5,25 @@
     text-align: center;
 }
 
+.settings-container {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 1rem;
+}
+
+.settings-icon {
+    height: 3em;
+    width: auto;
+    transition: filter 300ms;
+    cursor: pointer;
+}
+
+.settings-icon:hover {
+    filter: drop-shadow(0 0 2em white);
+    animation: logo-spin infinite 3s linear;
+}
+
 .logo {
     height: 6em;
     padding: 1.5em;

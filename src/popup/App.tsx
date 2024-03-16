@@ -6,6 +6,7 @@ import type {
 } from '../interfaces';
 import { useEffect, useState } from 'react';
 import logo from '/logo.svg';
+import settings from '/settings.svg';
 import './App.css';
 import {
     TOGGLE_RUNNING_STATE,
@@ -20,12 +21,16 @@ import TabCardList from './TabCardList';
 import ErrorComponent from './ErrorComponent';
 import RunningAnimation from './RunningAnimation';
 import DownloadingAnimation from './DownloadingAnimation';
+import SettingsModal from './SettingsModal';
 
 const App = () => {
     const [running, setRunning] = useState(false);
     const [downloading, setDownloading] = useState(false);
     const [tabs, setTabs] = useState<ITabData[]>([]);
     const [errorMessage, setErrorMessage] = useState<string>();
+    const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
+    const [developerMode, setDeveloperMode] = useState(false);
+    const [maxTabs, setMaxTabs] = useState(5);
 
     useEffect(() => {
         initializeUI();
@@ -50,6 +55,10 @@ const App = () => {
         LocalStorageWrapper.get('tabs').then((tabs) => {
             setTabs(tabs || []);
         });
+    };
+
+    const toggleSettingsVisibility = () => {
+        setSettingsVisible((prevState) => !prevState);
     };
 
     const toggleScraping = async () => {
@@ -89,6 +98,26 @@ const App = () => {
 
     return (
         <>
+            <div
+                className="settings-container"
+                onClick={toggleSettingsVisibility}
+            >
+                <img src={settings} className="settings-icon" alt="settings" />
+            </div>
+            {settingsVisible && (
+                <>
+                    <div
+                        className="settings-modal-overlay"
+                        onClick={toggleSettingsVisibility}
+                    ></div>
+                    <SettingsModal
+                        developerMode={developerMode}
+                        setDeveloperMode={setDeveloperMode}
+                        maxTabs={maxTabs}
+                        setMaxTabs={setMaxTabs}
+                    />
+                </>
+            )}
             <img src={logo} className="logo" alt="logo" />
             <h2>{EXTENSION_HEADER}</h2>
             <div className="buttons">

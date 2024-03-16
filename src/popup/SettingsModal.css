@@ -1,0 +1,140 @@
+.settings-modal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    width: 60%;
+    max-width: 500px;
+    background-color: #e1d5d5;
+    border-radius: 20px;
+    padding: 20px;
+    z-index: 1000;
+    animation: modalAppear 0.3s forwards;
+    color: #242424;
+}
+
+.settings-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.7);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+.settings-modal h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.settings-content {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.setting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.setting label {
+    margin-bottom: 5px;
+}
+
+.setting input[type='number'] {
+    padding: 1em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+    width: 80%;
+    font-size: 1em;
+}
+
+.setting small {
+    text-align: center;
+    color: #d13737;
+}
+
+/* Ensure the checkbox aligns nicely with its label */
+.setting input[type='checkbox'] {
+    margin-left: 5px;
+    margin-top: -1px;
+}
+
+/* Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: 0.4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    position: absolute;
+    content: '';
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #242424;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196f3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
