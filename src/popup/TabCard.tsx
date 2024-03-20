@@ -55,7 +55,9 @@ const TabCard = ({
                             )
                         }
                     >
-                        Show Suggestions
+                        {suggestionsVisible
+                            ? 'Hide Suggestions'
+                            : 'Show Suggestions'}
                     </button>
                 ) : (
                     'No suggestions'

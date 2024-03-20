@@ -73,3 +73,11 @@ export interface ILocalStorage {
 }
 
 export type LocalStorageKeys = keyof ILocalStorage;
+
+export type Severity = 'INFO' | 'ERROR';
+
+export interface ILog {
+    methodName: string;
+    severity: Severity;
+    message: string;
+}

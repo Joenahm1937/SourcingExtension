@@ -1,12 +1,15 @@
+import type { ILog } from '../interfaces';
+
 const DEFAULT_FINDING_TIMEOUT = 20000;
 
+//https://chat.openai.com/share/732827b5-0eb4-4dc0-b9eb-102aba8afd5d
 /**
  * Provides utility functions for DOM manipulations and interactions, with built-in error handling.
  */
 export class DOMHelperClass {
     private static instance: DOMHelperClass;
-    hasErrored = false;
-    errorStack: string[] = [];
+    loggingEnabled = true;
+    stackTrace: ILog[] = [];
 
     /**
      * Returns the singleton instance of the class.
@@ -30,10 +33,19 @@ export class DOMHelperClass {
                 const element = node.querySelector(queryString);
                 if (element) {
                     clearInterval(interval);
+                    this.log({
+                        methodName: 'findNode',
+                        severity: 'INFO',
+                        message: `Found node with queryString ${queryString}`,
+                    });
                     resolve(element as T);
                 } else if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
-                    this.appendErrorStack('findNode', queryString);
+                    this.log({
+                        methodName: 'findNode',
+                        severity: 'ERROR',
+                        message: `Failed to find node with queryString ${queryString}`,
+                    });
                     resolve(null);
                 }
             }, 100);
@@ -52,13 +64,22 @@ export class DOMHelperClass {
                 for (let i = 0; i < elements.length; i++) {
                     if (elements[i].textContent?.toUpperCase().includes(text)) {
                         clearInterval(interval);
+                        this.log({
+                            methodName: 'findNodeByText',
+                            severity: 'INFO',
+                            message: `Found node with text ${text}`,
+                        });
                         resolve(elements[i] as T);
                         return;
                     }
                 }
                 if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
-                    this.appendErrorStack('findNodeByText', text);
+                    this.log({
+                        methodName: 'findNodeByText',
+                        severity: 'ERROR',
+                        message: `Failed to find node with text ${text}`,
+                    });
                     resolve(null);
                 }
             }, 100);
@@ -76,10 +97,19 @@ export class DOMHelperClass {
                 const elements = node.querySelectorAll(queryString);
                 if (elements.length !== 0) {
                     clearInterval(interval);
+                    this.log({
+                        methodName: 'findAllNodes',
+                        severity: 'INFO',
+                        message: `Found nodes with queryString ${queryString}`,
+                    });
                     resolve(Array.from(elements) as T[]);
                 } else if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
-                    this.appendErrorStack('findAllNodes', queryString);
+                    this.log({
+                        methodName: 'findAllNodes',
+                        severity: 'ERROR',
+                        message: `Failed to nodes with queryString ${queryString}`,
+                    });
                     resolve([]);
                 }
             }, 100);
@@ -93,11 +123,27 @@ export class DOMHelperClass {
         let currentNode: Element | null = startNode;
         while (currentNode) {
             const foundNode = currentNode.querySelector<T>(queryString);
-            if (foundNode) return foundNode;
+            if (foundNode) {
+                this.log({
+                    methodName: 'findNodeUpwards',
+                    severity: 'INFO',
+                    message: `Found node upwards from ${startNode.outerHTML.substring(
+                        0,
+                        30
+                    )} with queryString ${queryString}`,
+                });
+                return foundNode;
+            }
             currentNode = currentNode.parentElement;
         }
-        // If no matching node is found after traversing up the DOM tree
-        this.appendErrorStack('findNodeUpwards', queryString);
+        this.log({
+            methodName: 'findNodeUpwards',
+            severity: 'ERROR',
+            message: `No matching node upwards from ${startNode.outerHTML.substring(
+                0,
+                30
+            )} with queryString ${queryString}`,
+        });
         return null;
     }
 
@@ -118,9 +164,18 @@ export class DOMHelperClass {
                 : element.innerText.toUpperCase() === pattern;
         });
         if (filteredElements.length === 0) {
-            this.appendErrorStack('filterElementsByText', pattern.toString());
+            this.log({
+                methodName: 'filterElementsByText',
+                severity: 'INFO',
+                message: `No element found with text/pattern ${pattern}`,
+            });
             return [];
         }
+        this.log({
+            methodName: 'filterElementsByText',
+            severity: 'ERROR',
+            message: `Found element with text/pattern ${pattern}`,
+        });
         return filteredElements;
     };
 
@@ -145,16 +200,28 @@ export class DOMHelperClass {
             }
         });
         if (noSingleHighest) {
-            this.appendErrorStack('findHighestElement', elementList.join(','));
+            this.log({
+                methodName: 'findHighestElement',
+                severity: 'INFO',
+                message: `No highest level element identified in the specified elementList`,
+            });
             return null;
         }
+        this.log({
+            methodName: 'findHighestElement',
+            severity: 'ERROR',
+            message: `Highest level element found: ${highestElement.outerHTML.substring(
+                0,
+                30
+            )}`,
+        });
         return highestElement;
     };
 
-    private appendErrorStack(methodName: string, identifier: string): void {
-        const errorMessage = `${methodName} ${identifier}`;
-        if (!this.hasErrored) this.hasErrored = true;
-        this.errorStack.push(errorMessage);
+    log(log: ILog): void {
+        if (this.loggingEnabled) {
+            this.stackTrace.push(log);
+        }
     }
 }
 

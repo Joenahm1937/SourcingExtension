@@ -39,7 +39,15 @@ const SettingsModal = ({
                         min="1"
                         max={MAX_TABS_LIMIT}
                         value={maxTabs}
-                        onChange={(e) => setMaxTabs(parseInt(e.target.value))}
+                        onChange={(e) => {
+                            const maxTabInput = parseInt(e.target.value);
+                            if (
+                                maxTabInput <= MAX_TABS_LIMIT &&
+                                MAX_TABS_LIMIT >= 0
+                            ) {
+                                setMaxTabs(parseInt(e.target.value));
+                            }
+                        }}
                     />
                     {maxTabs > 5 && (
                         <small>
