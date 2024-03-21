@@ -2,9 +2,10 @@ import type {
     IMessage,
     IPopupMessage,
     IResponse,
+    ISettingsUpdateMessage,
     ITabData,
 } from '../interfaces';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import logo from '/logo.svg';
 import settings from '/settings.svg';
 import './App.css';
@@ -12,7 +13,6 @@ import {
     TOGGLE_RUNNING_STATE,
     POPUP_SIGNAL,
     isWorkerMessage,
-    DOWNLOAD_BUTTON_TEXT,
     EXTENSION_HEADER,
     RESET_BUTTON_TEXT,
 } from './constants';
@@ -20,17 +20,18 @@ import { LocalStorageWrapper } from '../LocalStorageWrapper';
 import TabCardList from './TabCardList';
 import ErrorComponent from './ErrorComponent';
 import RunningAnimation from './RunningAnimation';
-import DownloadingAnimation from './DownloadingAnimation';
 import SettingsModal from './SettingsModal';
+import { useAppContext } from './AppContext';
 
 const App = () => {
     const [running, setRunning] = useState(false);
-    const [downloading, setDownloading] = useState(false);
     const [tabs, setTabs] = useState<ITabData[]>([]);
     const [errorMessage, setErrorMessage] = useState<string>();
     const [settingsVisible, setSettingsVisible] = useState<boolean>(false);
-    const [developerMode, setDeveloperMode] = useState(false);
-    const [maxTabs, setMaxTabs] = useState(5);
+    const isFirstMount = useRef(true);
+
+    const { developerMode, maxTabs, setDeveloperMode, setMaxTabs } =
+        useAppContext();
 
     useEffect(() => {
         initializeUI();
@@ -44,11 +45,39 @@ const App = () => {
         return () => chrome.runtime.onMessage.removeListener(handleMessage);
     }, []);
 
+    useEffect(() => {
+        if (isFirstMount.current) {
+            isFirstMount.current = false;
+            return;
+        }
+
+        const message: ISettingsUpdateMessage = {
+            source: 'Popup',
+            signal: 'update_settings',
+            payload: {
+                devMode: developerMode,
+                maxTabs,
+            },
+        };
+
+        const updateSettings = async () => {
+            await LocalStorageWrapper.set('devMode', developerMode);
+            await LocalStorageWrapper.set('maxTabs', maxTabs);
+            chrome.runtime.sendMessage(message);
+        };
+
+        updateSettings();
+    }, [developerMode, maxTabs]);
+
     const initializeUI = async () => {
         const storedTabs = await LocalStorageWrapper.get('tabs');
         const storedRunningStatus = await LocalStorageWrapper.get('isRunning');
+        const storedDevMode = await LocalStorageWrapper.get('devMode');
+        const storedMaxTabs = await LocalStorageWrapper.get('maxTabs');
         if (storedTabs) setTabs(storedTabs);
         if (storedRunningStatus) setRunning(storedRunningStatus);
+        if (storedDevMode) setDeveloperMode(storedDevMode);
+        if (storedMaxTabs) setMaxTabs(storedMaxTabs);
     };
 
     const refreshUI = () => {
@@ -89,13 +118,6 @@ const App = () => {
         refreshUI();
     };
 
-    const download = async () => {
-        setDownloading(true);
-        await new Promise((resolve) => setTimeout(resolve, 4000));
-        setDownloading(false);
-        reset();
-    };
-
     return (
         <>
             <div
@@ -110,36 +132,23 @@ const App = () => {
                         className="settings-modal-overlay"
                         onClick={toggleSettingsVisibility}
                     ></div>
-                    <SettingsModal
-                        developerMode={developerMode}
-                        setDeveloperMode={setDeveloperMode}
-                        maxTabs={maxTabs}
-                        setMaxTabs={setMaxTabs}
-                    />
+                    <SettingsModal />
                 </>
             )}
             <img src={logo} className="logo" alt="logo" />
             <h2>{EXTENSION_HEADER}</h2>
             <div className="buttons">
-                {!downloading ? (
-                    <button onClick={toggleScraping}>
-                        {running
-                            ? TOGGLE_RUNNING_STATE.RUNNING
-                            : TOGGLE_RUNNING_STATE.REST}
-                    </button>
-                ) : null}
+                <button onClick={toggleScraping}>
+                    {running
+                        ? TOGGLE_RUNNING_STATE.RUNNING
+                        : TOGGLE_RUNNING_STATE.REST}
+                </button>
                 {running ? <RunningAnimation /> : null}
-                {!running && !downloading && tabs.length ? (
-                    <>
-                        <button onClick={reset}>{RESET_BUTTON_TEXT}</button>
-                        <button onClick={download}>
-                            {DOWNLOAD_BUTTON_TEXT}
-                        </button>
-                    </>
+                {!running && tabs.length ? (
+                    <button onClick={reset}>{RESET_BUTTON_TEXT}</button>
                 ) : null}
             </div>
 
-            {downloading ? <DownloadingAnimation /> : null}
             <ErrorComponent message={errorMessage} />
             <TabCardList tabs={tabs} />
         </>

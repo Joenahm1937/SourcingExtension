@@ -6,12 +6,18 @@ import type {
     IWorkerMessage,
 } from '../interfaces';
 import { LocalStorageWrapper } from '../LocalStorageWrapper';
-import { isContentScriptMessage, isPopupMessage } from './constants';
+import {
+    isContentScriptMessage,
+    isPopupMessage,
+    isSettingsUpdateMessage,
+} from './constants';
 import { TabsFacade } from './TabsFacade';
 
 const PopupMessageHandler: IPopupMessageHandler = {
     processMessage(message, sendResponse) {
-        if (message.signal === 'start') {
+        if (isSettingsUpdateMessage(message)) {
+            console.log(message);
+        } else if (message.signal === 'start') {
             TabsFacade.startProcessing((error?: Error) => {
                 if (error) {
                     sendResponse({ success: false, message: error.message });

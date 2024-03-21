@@ -2,6 +2,7 @@ import type {
     IContentScriptMessage,
     IMessage,
     IPopupMessage,
+    ISettingsUpdateMessage,
 } from '../interfaces';
 
 export const INVALID_PAGE_ERROR =
@@ -17,6 +18,12 @@ export const WORKER_SIGNAL = {
 
 export const isPopupMessage = (message: IMessage): message is IPopupMessage => {
     return message.source === 'Popup';
+};
+
+export const isSettingsUpdateMessage = (
+    message: IPopupMessage
+): message is ISettingsUpdateMessage => {
+    return message.signal === 'update_settings';
 };
 
 export const isContentScriptMessage = (

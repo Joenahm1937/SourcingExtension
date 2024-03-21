@@ -11,10 +11,10 @@ export const POPUP_SIGNAL = {
     START: 'start',
     STOP: 'stop',
     RESTART: 'restart',
+    SETTINGS_UPDATE: 'update_settings',
 } as const;
 
 export const RESET_BUTTON_TEXT = 'RESET';
-export const DOWNLOAD_BUTTON_TEXT = 'DOWNLOAD';
 
 export const isWorkerMessage = (
     message: IMessage

@@ -34,7 +34,7 @@ export class DOMHelperClass {
                 if (element) {
                     clearInterval(interval);
                     this.log({
-                        methodName: 'findNode',
+                        methodName: this.findNode.name,
                         severity: 'INFO',
                         message: `Found node with queryString ${queryString}`,
                     });
@@ -42,8 +42,8 @@ export class DOMHelperClass {
                 } else if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
                     this.log({
-                        methodName: 'findNode',
-                        severity: 'ERROR',
+                        methodName: this.findNode.name,
+                        severity: 'WARN',
                         message: `Failed to find node with queryString ${queryString}`,
                     });
                     resolve(null);
@@ -61,23 +61,27 @@ export class DOMHelperClass {
             const startTime = Date.now();
             const interval = setInterval(() => {
                 const elements = node.getElementsByTagName('*');
-                for (let i = 0; i < elements.length; i++) {
-                    if (elements[i].textContent?.toUpperCase().includes(text)) {
+                for (let element of elements) {
+                    if (
+                        element.textContent
+                            ?.toUpperCase()
+                            .includes(text.toUpperCase())
+                    ) {
                         clearInterval(interval);
                         this.log({
-                            methodName: 'findNodeByText',
+                            methodName: this.findNodeByText.name,
                             severity: 'INFO',
                             message: `Found node with text ${text}`,
                         });
-                        resolve(elements[i] as T);
+                        resolve(element as T);
                         return;
                     }
                 }
                 if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
                     this.log({
-                        methodName: 'findNodeByText',
-                        severity: 'ERROR',
+                        methodName: this.findNodeByText.name,
+                        severity: 'WARN',
                         message: `Failed to find node with text ${text}`,
                     });
                     resolve(null);
@@ -90,7 +94,7 @@ export class DOMHelperClass {
         queryString: string,
         node: Document | Element = document,
         timeoutMs: number = DEFAULT_FINDING_TIMEOUT
-    ): Promise<T[] | []> {
+    ): Promise<T[]> {
         return new Promise((resolve) => {
             const startTime = Date.now();
             const interval = setInterval(() => {
@@ -98,7 +102,7 @@ export class DOMHelperClass {
                 if (elements.length !== 0) {
                     clearInterval(interval);
                     this.log({
-                        methodName: 'findAllNodes',
+                        methodName: this.findAllNodes.name,
                         severity: 'INFO',
                         message: `Found nodes with queryString ${queryString}`,
                     });
@@ -106,8 +110,8 @@ export class DOMHelperClass {
                 } else if (Date.now() - startTime > timeoutMs) {
                     clearInterval(interval);
                     this.log({
-                        methodName: 'findAllNodes',
-                        severity: 'ERROR',
+                        methodName: this.findAllNodes.name,
+                        severity: 'WARN',
                         message: `Failed to nodes with queryString ${queryString}`,
                     });
                     resolve([]);
@@ -125,7 +129,7 @@ export class DOMHelperClass {
             const foundNode = currentNode.querySelector<T>(queryString);
             if (foundNode) {
                 this.log({
-                    methodName: 'findNodeUpwards',
+                    methodName: this.findNodeUpwards.name,
                     severity: 'INFO',
                     message: `Found node upwards from ${startNode.outerHTML.substring(
                         0,
@@ -137,8 +141,8 @@ export class DOMHelperClass {
             currentNode = currentNode.parentElement;
         }
         this.log({
-            methodName: 'findNodeUpwards',
-            severity: 'ERROR',
+            methodName: this.findNodeUpwards.name,
+            severity: 'WARN',
             message: `No matching node upwards from ${startNode.outerHTML.substring(
                 0,
                 30
@@ -153,10 +157,10 @@ export class DOMHelperClass {
      * @param elementList - An array of HTMLElements to filter.
      * @returns An array of HTMLElements that match the specified text or pattern.
      */
-    filterElementsByText = (
+    filterElementsByText(
         pattern: string | RegExp,
         elementList: HTMLElement[]
-    ): HTMLElement[] => {
+    ): HTMLElement[] {
         const isRegex = pattern instanceof RegExp;
         const filteredElements = elementList.filter((element) => {
             return isRegex
@@ -165,26 +169,26 @@ export class DOMHelperClass {
         });
         if (filteredElements.length === 0) {
             this.log({
-                methodName: 'filterElementsByText',
-                severity: 'INFO',
+                methodName: this.filterElementsByText.name,
+                severity: 'WARN',
                 message: `No element found with text/pattern ${pattern}`,
             });
             return [];
         }
         this.log({
-            methodName: 'filterElementsByText',
-            severity: 'ERROR',
+            methodName: this.filterElementsByText.name,
+            severity: 'INFO',
             message: `Found element with text/pattern ${pattern}`,
         });
         return filteredElements;
-    };
+    }
 
     /**
      * Identifies the highest element in the DOM from a list of elements.
      * @param elementList - An array of HTMLElements to evaluate.
      * @returns The highest HTMLElement in the DOM, or null if no unique highest element is found.
      */
-    findHighestElement = (elementList: HTMLElement[]): HTMLElement | null => {
+    findHighestElement(elementList: HTMLElement[]): HTMLElement | null {
         let noSingleHighest = false;
         if (elementList.length === 0) return null;
         const highestElement = elementList.reduce((highest, current) => {
@@ -201,27 +205,26 @@ export class DOMHelperClass {
         });
         if (noSingleHighest) {
             this.log({
-                methodName: 'findHighestElement',
-                severity: 'INFO',
+                methodName: this.findHighestElement.name,
+                severity: 'WARN',
                 message: `No highest level element identified in the specified elementList`,
             });
             return null;
         }
         this.log({
-            methodName: 'findHighestElement',
-            severity: 'ERROR',
+            methodName: this.findHighestElement.name,
+            severity: 'INFO',
             message: `Highest level element found: ${highestElement.outerHTML.substring(
                 0,
                 30
             )}`,
         });
         return highestElement;
-    };
+    }
 
     log(log: ILog): void {
-        if (this.loggingEnabled) {
-            this.stackTrace.push(log);
-        }
+        if (!this.loggingEnabled) return;
+        this.stackTrace.push(log);
     }
 }
 

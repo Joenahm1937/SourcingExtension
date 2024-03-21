@@ -62,3 +62,25 @@
 .tab-card .suggested-profile:hover {
     text-decoration: underline;
 }
+
+.log-card {
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    padding: 0.5em;
+    margin: 0.5em 0;
+    font-size: 0.8em;
+}
+
+.log-detail {
+    margin-bottom: 0.25em;
+}
+
+/* .log-info {} */
+
+.log-warn {
+    background-color: rgb(186, 186, 94);
+}
+
+.log-error {
+    background-color: rgb(217, 125, 125);
+}

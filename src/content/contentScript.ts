@@ -1,6 +1,8 @@
 import type { IContentScriptMessage, ITabData } from '../interfaces';
 import { DOMHelper } from './DomHelper';
 
+const loggingEnabled = true;
+
 const BUTTON_TEXTS = {
     follow: 'FOLLOW',
     following: 'FOLLOWING',
@@ -162,8 +164,8 @@ const getBioLinkUrls = async (): Promise<string[]> => {
     const message: IContentScriptMessage = {
         source: 'ContentScript',
         signal: 'complete',
-        tabData: DOMHelper.hasErrored
-            ? { ...profileData, errorStack: DOMHelper.errorStack }
+        tabData: loggingEnabled
+            ? { ...profileData, logs: DOMHelper.stackTrace }
             : profileData,
     };
     chrome.runtime.sendMessage(message);

@@ -17,6 +17,10 @@ export interface IPopupMessage extends IMessage {
     signal: (typeof POPUP_SIGNAL)[keyof typeof POPUP_SIGNAL];
 }
 
+export interface ISettingsUpdateMessage extends IPopupMessage {
+    payload: ISettings;
+}
+
 export interface IWorkerMessage extends IMessage {
     signal: (typeof WORKER_SIGNAL)[keyof typeof WORKER_SIGNAL];
 }
@@ -57,6 +61,11 @@ type SerializableValue =
 type SerializableObject = { [key: string]: SerializableValue };
 type SerializableArray = SerializableValue[];
 
+export interface ISettings extends SerializableObject {
+    devMode: boolean;
+    maxTabs: number;
+}
+
 export interface ITabData extends SerializableObject {
     url: string;
     user: string;
@@ -64,19 +73,21 @@ export interface ITabData extends SerializableObject {
     bioLinkUrls?: string[];
     followerCount?: string;
     suggestedProfiles?: string[];
-    errorStack?: string[];
+    logs?: ILog[];
 }
 
 export interface ILocalStorage {
     isRunning: boolean;
     tabs: ITabData[];
+    devMode: boolean;
+    maxTabs: number;
 }
 
 export type LocalStorageKeys = keyof ILocalStorage;
 
-export type Severity = 'INFO' | 'ERROR';
+export type Severity = 'INFO' | 'WARN' | 'ERROR';
 
-export interface ILog {
+export interface ILog extends SerializableObject {
     methodName: string;
     severity: Severity;
     message: string;

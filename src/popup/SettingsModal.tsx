@@ -1,20 +1,12 @@
 import './SettingsModal.css';
+import { useAppContext } from './AppContext';
 
 const MAX_TABS_LIMIT = 10;
 
-interface ISettingsModalProps {
-    developerMode: boolean;
-    setDeveloperMode: React.Dispatch<React.SetStateAction<boolean>>;
-    maxTabs: number;
-    setMaxTabs: React.Dispatch<React.SetStateAction<number>>;
-}
+const SettingsModal = () => {
+    const { developerMode, setDeveloperMode, maxTabs, setMaxTabs } =
+        useAppContext();
 
-const SettingsModal = ({
-    developerMode,
-    setDeveloperMode,
-    maxTabs,
-    setMaxTabs,
-}: ISettingsModalProps) => {
     return (
         <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
             <h2>Settings</h2>

@@ -1,4 +1,4 @@
-import type { ITabData } from '../interfaces';
+import type { ILog, ITabData } from '../interfaces';
 import { useState } from 'react';
 
 const TabCard = ({
@@ -8,9 +8,9 @@ const TabCard = ({
     followerCount,
     suggestedProfiles,
     profileImageUrl,
-    errorStack,
+    logs,
 }: ITabData) => {
-    const [errorVisible, setErrorVisible] = useState(false);
+    const [logsVisible, setLogsVisible] = useState(false);
     const [suggestionsVisible, setSuggestionsVisible] = useState(false);
 
     return (
@@ -47,51 +47,89 @@ const TabCard = ({
                         </div>
                     ))}
                 </div>
-                {suggestedProfiles ? (
-                    <button
-                        onClick={() =>
-                            setSuggestionsVisible(
-                                (prevVisibility) => !prevVisibility
-                            )
-                        }
-                    >
-                        {suggestionsVisible
-                            ? 'Hide Suggestions'
-                            : 'Show Suggestions'}
-                    </button>
-                ) : (
-                    'No suggestions'
-                )}
-                {suggestionsVisible ? (
-                    <div>
-                        <h5>Suggested Profiles:</h5>
-                        {suggestedProfiles?.map((suggestedProfile) => {
-                            return (
-                                <div
-                                    className="suggested-profile"
-                                    onClick={() =>
-                                        chrome.tabs.create({
-                                            active: true,
-                                            url: suggestedProfile,
-                                        })
-                                    }
-                                >
-                                    {`@${getNameFromUrl(suggestedProfile)}`}
-                                </div>
-                            );
-                        })}
-                    </div>
-                ) : null}
-                {errorStack ? (
-                    <button
-                        onClick={() =>
-                            setErrorVisible((prevVisibility) => !prevVisibility)
-                        }
-                    >
-                        Toggle Error
-                    </button>
-                ) : null}
-                {errorVisible ? <div>{errorStack?.join(',')}</div> : null}
+                <div>
+                    {suggestedProfiles ? (
+                        <button
+                            onClick={() =>
+                                setSuggestionsVisible(
+                                    (prevVisibility) => !prevVisibility
+                                )
+                            }
+                        >
+                            {suggestionsVisible
+                                ? 'Hide Suggestions'
+                                : 'Show Suggestions'}
+                        </button>
+                    ) : (
+                        'No suggestions'
+                    )}
+                    {suggestionsVisible ? (
+                        <div>
+                            <h5>Suggested Profiles:</h5>
+                            {suggestedProfiles?.map((suggestedProfile) => {
+                                return (
+                                    <div
+                                        className="suggested-profile"
+                                        onClick={() =>
+                                            chrome.tabs.create({
+                                                active: true,
+                                                url: suggestedProfile,
+                                            })
+                                        }
+                                    >
+                                        {`@${getNameFromUrl(suggestedProfile)}`}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : null}
+                </div>
+                <div>
+                    {logs ? (
+                        <button
+                            onClick={() =>
+                                setLogsVisible(
+                                    (prevVisibility) => !prevVisibility
+                                )
+                            }
+                        >
+                            {logsVisible ? 'Hide Logs' : 'Show Logs'}
+                        </button>
+                    ) : null}
+                    {logsVisible ? (
+                        <div>
+                            {logs?.map((log: ILog) => {
+                                let backgroundColorClass = '';
+                                switch (log.severity) {
+                                    case 'WARN':
+                                        backgroundColorClass = 'log-warn';
+                                        break;
+                                    case 'ERROR':
+                                        backgroundColorClass = 'log-error';
+                                        break;
+                                    case 'INFO':
+                                    default:
+                                        backgroundColorClass = 'log-info';
+                                        break;
+                                }
+                                return (
+                                    <div
+                                        className={`log-card ${backgroundColorClass}`}
+                                    >
+                                        <div className="log-detail">
+                                            <strong>Method:</strong>{' '}
+                                            {log.methodName}
+                                        </div>
+                                        <div className="log-detail">
+                                            <strong>Message:</strong>{' '}
+                                            {log.message}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : null}
+                </div>
             </div>
         </li>
     );
