@@ -75,8 +75,12 @@
     margin-bottom: 0.25em;
 }
 
-.log-fatal {
-    background-color: rgb(201, 74, 74);
+.log-debug-hide {
+    display: none;
+}
+
+.log-info {
+    background-color: rgb(98, 186, 94);
 }
 
 .log-warn {
@@ -85,4 +89,8 @@
 
 .log-error {
     background-color: rgb(208, 136, 74);
+}
+
+.log-fatal {
+    background-color: rgb(201, 74, 74);
 }

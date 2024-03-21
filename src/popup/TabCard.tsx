@@ -13,6 +13,7 @@ const TabCard = ({
     suggester,
 }: ITabData) => {
     const [logsVisible, setLogsVisible] = useState(false);
+    const [debugLogsVisible, setDebugLogsVisible] = useState(false);
     const [suggestionsVisible, setSuggestionsVisible] = useState(false);
 
     return (
@@ -101,39 +102,58 @@ const TabCard = ({
                             {logsVisible ? 'Hide Logs' : 'Show Logs'}
                         </button>
                     ) : null}
-                    {logsVisible ? (
+                    {logs && logsVisible ? (
                         <div>
-                            {logs?.map((log: ILog) => {
-                                let backgroundColorClass = '';
-                                switch (log.severity) {
-                                    case 'WARN':
-                                        backgroundColorClass = 'log-warn';
-                                        break;
-                                    case 'ERROR':
-                                        backgroundColorClass = 'log-error';
-                                        break;
-                                    case 'FATAL':
-                                        backgroundColorClass = 'log-fatal';
-                                        break;
-                                    default:
-                                        backgroundColorClass = 'log-info';
-                                        break;
+                            <button
+                                onClick={() =>
+                                    setDebugLogsVisible(
+                                        (prevVisibility) => !prevVisibility
+                                    )
                                 }
-                                return (
-                                    <div
-                                        className={`log-card ${backgroundColorClass}`}
-                                    >
-                                        <div className="log-detail">
-                                            <strong>Method:</strong>{' '}
-                                            {log.methodName}
+                            >
+                                {debugLogsVisible
+                                    ? 'Hide Debug Logs'
+                                    : 'Show Debug Logs'}
+                            </button>
+                            <div>
+                                {logs.map((log: ILog) => {
+                                    let backgroundColorClass = '';
+                                    switch (log.severity) {
+                                        case 'INFO':
+                                            backgroundColorClass = 'log-info';
+                                            break;
+                                        case 'WARN':
+                                            backgroundColorClass = 'log-warn';
+                                            break;
+                                        case 'ERROR':
+                                            backgroundColorClass = 'log-error';
+                                            break;
+                                        case 'FATAL':
+                                            backgroundColorClass = 'log-fatal';
+                                            break;
+                                        default:
+                                            backgroundColorClass =
+                                                debugLogsVisible
+                                                    ? 'log-debug-show'
+                                                    : 'log-debug-hide';
+                                            break;
+                                    }
+                                    return (
+                                        <div
+                                            className={`log-card ${backgroundColorClass}`}
+                                        >
+                                            <div className="log-detail">
+                                                <strong>Method:</strong>{' '}
+                                                {log.methodName}
+                                            </div>
+                                            <div className="log-detail">
+                                                <strong>Message:</strong>{' '}
+                                                {log.message}
+                                            </div>
                                         </div>
-                                        <div className="log-detail">
-                                            <strong>Message:</strong>{' '}
-                                            {log.message}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })}
+                            </div>
                         </div>
                     ) : null}
                 </div>

@@ -101,7 +101,7 @@ export interface ILocalStorage {
 
 export type LocalStorageKeys = keyof ILocalStorage;
 
-export type Severity = 'INFO' | 'WARN' | 'ERROR' | 'FATAL';
+export type Severity = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR' | 'FATAL';
 
 export interface ILog extends SerializableObject {
     methodName: string;

@@ -36,7 +36,7 @@ export class DOMHelperClass {
                     clearInterval(interval);
                     this.log({
                         methodName: this.findNode.name,
-                        severity: 'INFO',
+                        severity: 'DEBUG',
                         message: `Found node with queryString ${queryString}`,
                     });
                     resolve(element as T);
@@ -71,7 +71,7 @@ export class DOMHelperClass {
                         clearInterval(interval);
                         this.log({
                             methodName: this.findNodeByText.name,
-                            severity: 'INFO',
+                            severity: 'DEBUG',
                             message: `Found node with text ${text}`,
                         });
                         resolve(element as T);
@@ -104,7 +104,7 @@ export class DOMHelperClass {
                     clearInterval(interval);
                     this.log({
                         methodName: this.findAllNodes.name,
-                        severity: 'INFO',
+                        severity: 'DEBUG',
                         message: `Found nodes with queryString ${queryString}`,
                     });
                     resolve(Array.from(elements) as T[]);
@@ -131,7 +131,7 @@ export class DOMHelperClass {
             if (foundNode) {
                 this.log({
                     methodName: this.findNodeUpwards.name,
-                    severity: 'INFO',
+                    severity: 'DEBUG',
                     message: `Found node upwards from ${startNode.outerHTML.substring(
                         0,
                         30
@@ -158,10 +158,10 @@ export class DOMHelperClass {
      * @param elementList - An array of HTMLElements to filter.
      * @returns An array of HTMLElements that match the specified text or pattern.
      */
-    filterElementsByText(
+    filterElementsByText<T extends HTMLElement>(
         pattern: string | RegExp,
-        elementList: HTMLElement[]
-    ): HTMLElement[] {
+        elementList: T[]
+    ): T[] {
         const isRegex = pattern instanceof RegExp;
         const filteredElements = elementList.filter((element) => {
             return isRegex
@@ -178,7 +178,7 @@ export class DOMHelperClass {
         }
         this.log({
             methodName: this.filterElementsByText.name,
-            severity: 'INFO',
+            severity: 'DEBUG',
             message: `Found element with text/pattern ${pattern}`,
         });
         return filteredElements;
@@ -189,7 +189,7 @@ export class DOMHelperClass {
      * @param elementList - An array of HTMLElements to evaluate.
      * @returns The highest HTMLElement in the DOM, or null if no unique highest element is found.
      */
-    findHighestElement(elementList: HTMLElement[]): HTMLElement | null {
+    findHighestElement<T extends HTMLElement>(elementList: T[]): T | null {
         let noSingleHighest = false;
         if (elementList.length === 0) return null;
         const highestElement = elementList.reduce((highest, current) => {
@@ -214,7 +214,7 @@ export class DOMHelperClass {
         }
         this.log({
             methodName: this.findHighestElement.name,
-            severity: 'INFO',
+            severity: 'DEBUG',
             message: `Highest level element found: ${highestElement.outerHTML.substring(
                 0,
                 30
