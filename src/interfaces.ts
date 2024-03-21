@@ -25,6 +25,10 @@ export interface IWorkerMessage extends IMessage {
     signal: (typeof WORKER_SIGNAL)[keyof typeof WORKER_SIGNAL];
 }
 
+export interface IScriptContextMessage extends IWorkerMessage {
+    scriptContext: IScriptContextData;
+}
+
 export interface IContentScriptMessage extends IMessage {
     signal: (typeof CONTENT_SCRIPT_SIGNAL)[keyof typeof CONTENT_SCRIPT_SIGNAL];
     tabData: ITabData;
@@ -66,13 +70,23 @@ export interface ISettings extends SerializableObject {
     maxTabs: number;
 }
 
+export interface IScriptContextData extends SerializableObject {
+    suggester?: string;
+}
+
+export interface IProfile extends SerializableObject {
+    suggester?: string;
+    url: string;
+}
+
 export interface ITabData extends SerializableObject {
     url: string;
     user: string;
     profileImageUrl?: string;
     bioLinkUrls?: string[];
     followerCount?: string;
-    suggestedProfiles?: string[];
+    suggestedProfiles?: IProfile[];
+    suggester?: string;
     logs?: ILog[];
 }
 

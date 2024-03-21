@@ -9,6 +9,7 @@ const TabCard = ({
     suggestedProfiles,
     profileImageUrl,
     logs,
+    suggester,
 }: ITabData) => {
     const [logsVisible, setLogsVisible] = useState(false);
     const [suggestionsVisible, setSuggestionsVisible] = useState(false);
@@ -27,6 +28,7 @@ const TabCard = ({
                     />
                     @{user}
                 </div>
+                {suggester && <div>Suggester: {suggester}</div>}
                 <div>{followerCount}</div>
                 <div>
                     {bioLinkUrls?.map((link) => (
@@ -73,11 +75,13 @@ const TabCard = ({
                                         onClick={() =>
                                             chrome.tabs.create({
                                                 active: true,
-                                                url: suggestedProfile,
+                                                url: suggestedProfile.url,
                                             })
                                         }
                                     >
-                                        {`@${getNameFromUrl(suggestedProfile)}`}
+                                        {`@${getNameFromUrl(
+                                            suggestedProfile.url
+                                        )}`}
                                     </div>
                                 );
                             })}

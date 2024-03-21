@@ -13,7 +13,7 @@ export const NO_TAB_PERMISSION_ERROR = 'No active tab found';
 
 export const WORKER_SIGNAL = {
     REFRESH_POPUP: 'refresh',
-    TAB_FAILURE: 'tab_failure',
+    SEND_CONTEXT: 'send_context',
 } as const;
 
 export const isPopupMessage = (message: IMessage): message is IPopupMessage => {

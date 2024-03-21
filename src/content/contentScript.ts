@@ -1,5 +1,11 @@
-import type { IContentScriptMessage, ITabData } from '../interfaces';
+import type {
+    IContentScriptMessage,
+    IMessage,
+    IProfile,
+    ITabData,
+} from '../interfaces';
 import { DOMHelper } from './DomHelper';
+import { isScriptContextMessage, isWorkerMessage } from './constants';
 
 const loggingEnabled = true;
 
@@ -48,7 +54,7 @@ const unfollowUser = async (): Promise<void> => {
 };
 
 // Fetches suggested profiles
-const getSuggestedProfiles = async (): Promise<string[] | undefined> => {
+const getSuggestedProfileUrls = async (): Promise<string[] | undefined> => {
     const anchorElement = await DOMHelper.findNode(
         '[href$="similar_accounts/"]'
     );
@@ -142,31 +148,41 @@ const getBioLinkUrls = async (): Promise<string[]> => {
     return bioLinks;
 };
 
-(async () => {
-    const username = getUsernameFromUrl(document.URL);
+const handleMessage = async (message: IMessage) => {
+    if (isWorkerMessage(message) && isScriptContextMessage(message)) {
+        const { suggester } = message.scriptContext;
+        const username = getUsernameFromUrl(document.URL);
 
-    await followUser();
+        await followUser();
 
-    // Collect profile data
-    const profileData: ITabData = {
-        user: username,
-        url: document.URL,
-        followerCount: await getFollowerCount(),
-        profileImageUrl: await getProfileImageUrl(username),
-        bioLinkUrls: await getBioLinkUrls(),
-        suggestedProfiles: await getSuggestedProfiles(),
-    };
+        const suggestedUrls = await getSuggestedProfileUrls();
+        const suggestedProfiles = suggestedUrls?.map((url) => ({
+            suggester: username,
+            url,
+        }));
 
-    await unfollowUser();
-    await sleep(1000);
+        const profileData: ITabData = {
+            user: username,
+            url: document.URL,
+            followerCount: await getFollowerCount(),
+            profileImageUrl: await getProfileImageUrl(username),
+            bioLinkUrls: await getBioLinkUrls(),
+            suggestedProfiles,
+            suggester,
+        };
 
-    // Send data to background script or handle errors
-    const message: IContentScriptMessage = {
-        source: 'ContentScript',
-        signal: 'complete',
-        tabData: loggingEnabled
-            ? { ...profileData, logs: DOMHelper.stackTrace }
-            : profileData,
-    };
-    chrome.runtime.sendMessage(message);
-})();
+        await unfollowUser();
+        await sleep(1000);
+
+        const response: IContentScriptMessage = {
+            source: 'ContentScript',
+            signal: 'complete',
+            tabData: loggingEnabled
+                ? { ...profileData, logs: DOMHelper.stackTrace }
+                : profileData,
+        };
+        chrome.runtime.sendMessage(response);
+    }
+};
+
+chrome.runtime.onMessage.addListener(handleMessage);

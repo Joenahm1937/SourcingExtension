@@ -32,7 +32,7 @@ const PopupMessageHandler: IPopupMessageHandler = {
             TabsFacade.stopProcessing();
             sendResponse({ success: true });
         } else if (message.signal === 'restart') {
-            TabsFacade.flushUrlQueue();
+            TabsFacade.flushQueue();
             sendResponse({ success: true });
         }
         return false;
@@ -41,11 +41,10 @@ const PopupMessageHandler: IPopupMessageHandler = {
 
 const ContentScriptMessageHandler: IContentScriptMessageHandler = {
     async processMessage(message, sender) {
-        // Comment out close tab during testing
         if (sender.tab) {
             TabsFacade.closeTab(sender.tab);
             if (message.tabData.suggestedProfiles)
-                TabsFacade.enqueueUrl(message.tabData.suggestedProfiles);
+                TabsFacade.enqueue(message.tabData.suggestedProfiles);
         }
         const tabData = message.tabData;
         const tabs = (await LocalStorageWrapper.get('tabs')) || [];

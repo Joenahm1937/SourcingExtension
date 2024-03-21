@@ -1,3 +1,4 @@
+import type { IScriptContextMessage, IProfile } from '../interfaces';
 import {
     INSTAGRAM_PROFILE_PAGE_REGEX,
     INVALID_PAGE_ERROR,
@@ -15,7 +16,7 @@ class TabsFacadeClass {
 
     // Should move visited to local storage
     private visited: Set<string> = new Set();
-    private urlQueue: string[] = [];
+    private queue: IProfile[] = [];
     private enabled: boolean = false;
 
     /**
@@ -44,11 +45,14 @@ class TabsFacadeClass {
             try {
                 if (this.isValidTab(currentTab)) {
                     this.enabled = true;
-                    if (this.urlQueue.length === 0) {
-                        this.enqueueUrl(currentTab.url);
+                    if (this.queue.length === 0) {
+                        const rootProfile: IProfile = {
+                            url: currentTab.url,
+                        };
+                        this.enqueue(rootProfile);
                     }
                     callback();
-                    this.processNextUrls();
+                    this.processNext();
                 }
             } catch (error) {
                 callback(error as Error);
@@ -61,7 +65,6 @@ class TabsFacadeClass {
      * TODO: Close all currently open tabs and only save tabs to local storage if this.enabled
      */
     public stopProcessing = (): void => {
-        console.log('Stopping Processing');
         this.enabled = false;
     };
 
@@ -72,32 +75,29 @@ class TabsFacadeClass {
             if (
                 this.enabled &&
                 this.openTabsCount < this.maxTabs &&
-                this.urlQueue.length > 0
+                this.queue.length > 0
             ) {
-                this.processNextUrls();
+                this.processNext();
             }
         });
-
-        // Uncomment for testing with mock urls
-        // this.enqueueUrl(MOCK_SUGGESTED_PROFILE_URLS);
     };
 
-    public flushUrlQueue = () => {
-        this.urlQueue = [];
+    public flushQueue = () => {
+        this.queue = [];
     };
 
     /**
      * Enqueues a single URL or an array of URLs to the processing queue.
      * @param {string | string[]} url - The URL or URLs to add to the queue.
      */
-    public enqueueUrl(url: string | string[]): void {
-        if (Array.isArray(url)) {
-            const nonVisitedUrls = url.filter(
-                (urlLink) => !this.visited.has(urlLink)
+    public enqueue(profiles: IProfile | IProfile[]): void {
+        if (Array.isArray(profiles)) {
+            const nonVisitedUrls = profiles.filter(
+                (profile) => !this.visited.has(profile.url)
             );
-            this.urlQueue.push(...nonVisitedUrls);
-        } else if (!this.visited.has(url)) {
-            this.urlQueue.push(url);
+            this.queue.push(...nonVisitedUrls);
+        } else if (!this.visited.has(profiles.url)) {
+            this.queue.push(profiles);
         }
     }
 
@@ -105,20 +105,20 @@ class TabsFacadeClass {
      * Dequeues URLs from the processing queue based on the available capacity.
      * @returns {string[]} An array of URLs to process next.
      */
-    private dequeueFreeUrls(): string[] {
+    private dequeueAvailable(): IProfile[] {
         const availableTabs = this.maxTabs - this.openTabsCount;
-        return this.urlQueue.splice(0, availableTabs);
+        return this.queue.splice(0, availableTabs);
     }
 
     /**
      * Processes the next URLs in the queue by opening new tabs if capacity allows.
      */
-    private processNextUrls(): void {
-        const urlsToProcess = this.dequeueFreeUrls();
-        urlsToProcess.forEach((url) => {
+    private processNext(): void {
+        const profilesToProcess = this.dequeueAvailable();
+        profilesToProcess.forEach((profile) => {
             this.openTabsCount++;
-            chrome.tabs.create({ url: url, active: false }, (tab) => {
-                this.visited.add(url);
+            chrome.tabs.create({ url: profile.url, active: false }, (tab) => {
+                this.visited.add(profile.url);
                 if (tab.id) {
                     // Check every 1 second if the tab is ready
                     const checkTabReady = setInterval(() => {
@@ -126,10 +126,25 @@ class TabsFacadeClass {
                             if (updatedTab.status === 'complete') {
                                 clearInterval(checkTabReady);
 
-                                chrome.scripting.executeScript({
-                                    target: { tabId: tab.id as number },
-                                    files: ['contentScript.js'],
-                                });
+                                chrome.scripting.executeScript(
+                                    {
+                                        target: { tabId: tab.id as number },
+                                        files: ['contentScript.js'],
+                                    },
+                                    () => {
+                                        const message: IScriptContextMessage = {
+                                            source: 'Worker',
+                                            signal: 'send_context',
+                                            scriptContext: {
+                                                suggester: profile.suggester,
+                                            },
+                                        };
+                                        chrome.tabs.sendMessage(
+                                            tab.id as number,
+                                            message
+                                        );
+                                    }
+                                );
                             }
                         });
                     }, 1000);
