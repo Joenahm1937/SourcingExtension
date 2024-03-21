@@ -1,13 +1,6 @@
-import type {
-    IContentScriptMessage,
-    IMessage,
-    IProfile,
-    ITabData,
-} from '../interfaces';
+import type { IContentScriptMessage, IMessage, ITabData } from '../interfaces';
 import { DOMHelper } from './DomHelper';
 import { isScriptContextMessage, isWorkerMessage } from './constants';
-
-const loggingEnabled = true;
 
 const BUTTON_TEXTS = {
     follow: 'FOLLOW',
@@ -150,7 +143,7 @@ const getBioLinkUrls = async (): Promise<string[]> => {
 
 const handleMessage = async (message: IMessage) => {
     if (isWorkerMessage(message) && isScriptContextMessage(message)) {
-        const { suggester } = message.scriptContext;
+        const { suggester, enableStackTrace } = message.scriptContext;
         const username = getUsernameFromUrl(document.URL);
 
         await followUser();
@@ -177,7 +170,7 @@ const handleMessage = async (message: IMessage) => {
         const response: IContentScriptMessage = {
             source: 'ContentScript',
             signal: 'complete',
-            tabData: loggingEnabled
+            tabData: enableStackTrace
                 ? { ...profileData, logs: DOMHelper.stackTrace }
                 : profileData,
         };

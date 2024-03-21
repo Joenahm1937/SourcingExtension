@@ -1,4 +1,8 @@
-import type { IScriptContextMessage, IProfile } from '../interfaces';
+import type {
+    IScriptContextMessage,
+    IProfile,
+    IScriptContextData,
+} from '../interfaces';
 import {
     INSTAGRAM_PROFILE_PAGE_REGEX,
     INVALID_PAGE_ERROR,
@@ -18,6 +22,9 @@ class TabsFacadeClass {
     private visited: Set<string> = new Set();
     private queue: IProfile[] = [];
     private enabled: boolean = false;
+    private scriptContext: IScriptContextData = {
+        enableStackTrace: false,
+    };
 
     /**
      * Returns the singleton instance of the class.
@@ -33,6 +40,13 @@ class TabsFacadeClass {
     public updateMaxTabs = (maxTabCount: number): void => {
         this.maxTabs = Math.min(10, Math.max(1, maxTabCount));
     };
+
+    public updateScriptContext(newContext: Partial<IScriptContextData>): void {
+        this.scriptContext = {
+            ...this.scriptContext,
+            ...newContext,
+        };
+    }
 
     /**
      * Validates if the extension is running on a valid tab
@@ -136,6 +150,7 @@ class TabsFacadeClass {
                                             source: 'Worker',
                                             signal: 'send_context',
                                             scriptContext: {
+                                                ...this.scriptContext,
                                                 suggester: profile.suggester,
                                             },
                                         };

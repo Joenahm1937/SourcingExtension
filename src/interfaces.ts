@@ -72,6 +72,7 @@ export interface ISettings extends SerializableObject {
 
 export interface IScriptContextData extends SerializableObject {
     suggester?: string;
+    enableStackTrace: boolean;
 }
 
 export interface IProfile extends SerializableObject {

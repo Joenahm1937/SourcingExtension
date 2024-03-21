@@ -17,6 +17,9 @@ const PopupMessageHandler: IPopupMessageHandler = {
     processMessage(message, sendResponse) {
         if (isSettingsUpdateMessage(message)) {
             TabsFacade.updateMaxTabs(message.payload.maxTabs);
+            TabsFacade.updateScriptContext({
+                enableStackTrace: message.payload.devMode,
+            });
         } else if (message.signal === 'start') {
             TabsFacade.startProcessing((error?: Error) => {
                 if (error) {
