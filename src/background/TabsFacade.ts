@@ -9,8 +9,8 @@ import { IValidatedTab } from './interfaces';
  * A singleton class to manage and control the opening and processing of tabs.
  */
 class TabsFacadeClass {
-    private readonly maxTabs = 5;
     private static instance: TabsFacadeClass;
+    private maxTabs = 5;
     private openTabsCount: number = 0;
 
     // Should move visited to local storage
@@ -28,6 +28,10 @@ class TabsFacadeClass {
         }
         return TabsFacadeClass.instance;
     }
+
+    public updateMaxTabs = (maxTabCount: number): void => {
+        this.maxTabs = Math.min(10, Math.max(1, maxTabCount));
+    };
 
     /**
      * Validates if the extension is running on a valid tab

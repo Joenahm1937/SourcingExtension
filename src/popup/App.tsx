@@ -109,7 +109,7 @@ const App = () => {
     };
 
     const reset = async () => {
-        LocalStorageWrapper.clear();
+        LocalStorageWrapper.remove(['isRunning', 'tabs']);
         const message: IPopupMessage = {
             source: 'Popup',
             signal: 'restart',

@@ -16,7 +16,7 @@ import { TabsFacade } from './TabsFacade';
 const PopupMessageHandler: IPopupMessageHandler = {
     processMessage(message, sendResponse) {
         if (isSettingsUpdateMessage(message)) {
-            console.log(message);
+            TabsFacade.updateMaxTabs(message.payload.maxTabs);
         } else if (message.signal === 'start') {
             TabsFacade.startProcessing((error?: Error) => {
                 if (error) {

@@ -15,8 +15,8 @@ export const LocalStorageWrapper = {
         return result[key];
     },
 
-    async remove(key: LocalStorageKeys): Promise<void> {
-        await chrome.storage.local.remove(key);
+    async remove(keys: LocalStorageKeys | LocalStorageKeys[]): Promise<void> {
+        await chrome.storage.local.remove(keys);
     },
 
     async clear(): Promise<void> {
