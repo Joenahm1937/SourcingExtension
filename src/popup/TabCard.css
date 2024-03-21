@@ -75,12 +75,14 @@
     margin-bottom: 0.25em;
 }
 
-/* .log-info {} */
+.log-fatal {
+    background-color: rgb(201, 74, 74);
+}
 
 .log-warn {
     background-color: rgb(186, 186, 94);
 }
 
 .log-error {
-    background-color: rgb(217, 125, 125);
+    background-color: rgb(208, 136, 74);
 }

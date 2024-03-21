@@ -147,6 +147,11 @@ const handleMessage = async (message: IMessage) => {
         const username = getUsernameFromUrl(document.URL);
 
         await followUser();
+        DOMHelper.log({
+            methodName: 'followUser',
+            message: 'Successfully Followed User',
+            severity: 'INFO',
+        });
 
         const suggestedUrls = await getSuggestedProfileUrls();
         const suggestedProfiles = suggestedUrls?.map((url) => ({
@@ -157,6 +162,7 @@ const handleMessage = async (message: IMessage) => {
         const profileData: ITabData = {
             user: username,
             url: document.URL,
+            fatalErrors: DOMHelper.fatalErrors,
             followerCount: await getFollowerCount(),
             profileImageUrl: await getProfileImageUrl(username),
             bioLinkUrls: await getBioLinkUrls(),
@@ -165,6 +171,11 @@ const handleMessage = async (message: IMessage) => {
         };
 
         await unfollowUser();
+        DOMHelper.log({
+            methodName: 'unfollowUser',
+            message: 'Successfully UnFollowed User',
+            severity: 'INFO',
+        });
         await sleep(1000);
 
         const response: IContentScriptMessage = {

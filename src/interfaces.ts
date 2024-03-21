@@ -83,6 +83,7 @@ export interface IProfile extends SerializableObject {
 export interface ITabData extends SerializableObject {
     url: string;
     user: string;
+    fatalErrors: ILog[];
     profileImageUrl?: string;
     bioLinkUrls?: string[];
     followerCount?: string;
@@ -100,7 +101,7 @@ export interface ILocalStorage {
 
 export type LocalStorageKeys = keyof ILocalStorage;
 
-export type Severity = 'INFO' | 'WARN' | 'ERROR';
+export type Severity = 'INFO' | 'WARN' | 'ERROR' | 'FATAL';
 
 export interface ILog extends SerializableObject {
     methodName: string;

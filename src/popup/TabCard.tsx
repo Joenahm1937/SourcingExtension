@@ -4,6 +4,7 @@ import { useState } from 'react';
 const TabCard = ({
     url,
     user,
+    // fatalErrors,
     bioLinkUrls,
     followerCount,
     suggestedProfiles,
@@ -111,7 +112,9 @@ const TabCard = ({
                                     case 'ERROR':
                                         backgroundColorClass = 'log-error';
                                         break;
-                                    case 'INFO':
+                                    case 'FATAL':
+                                        backgroundColorClass = 'log-fatal';
+                                        break;
                                     default:
                                         backgroundColorClass = 'log-info';
                                         break;

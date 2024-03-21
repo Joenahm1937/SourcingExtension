@@ -10,6 +10,7 @@ export class DOMHelperClass {
     private static instance: DOMHelperClass;
     loggingEnabled = true;
     stackTrace: ILog[] = [];
+    fatalErrors: ILog[] = [];
 
     /**
      * Returns the singleton instance of the class.
@@ -222,9 +223,16 @@ export class DOMHelperClass {
         return highestElement;
     }
 
-    log(log: ILog): void {
-        if (!this.loggingEnabled) return;
-        this.stackTrace.push(log);
+    log(logEntry: ILog): void {
+        const isFatal = logEntry.severity === 'FATAL';
+
+        if (isFatal) {
+            this.fatalErrors.push(logEntry);
+        }
+
+        if (this.loggingEnabled) {
+            this.stackTrace.push(logEntry);
+        }
     }
 }
 
