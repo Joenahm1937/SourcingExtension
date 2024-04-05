@@ -30,7 +30,7 @@ const TabCard = ({
                     />
                     @{user}
                 </div>
-                {suggester && <div>Suggester: {suggester}</div>}
+                {suggester && <div>Suggested By: @{suggester}</div>}
                 <div>{followerCount}</div>
                 <div>
                     {bioLinkUrls?.map((link) => (

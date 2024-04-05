@@ -1,8 +1,7 @@
 import type { ILog } from '../interfaces';
 
-const DEFAULT_FINDING_TIMEOUT = 20000;
+const DEFAULT_FINDING_TIMEOUT = 3000;
 
-//https://chat.openai.com/share/732827b5-0eb4-4dc0-b9eb-102aba8afd5d
 /**
  * Provides utility functions for DOM manipulations and interactions, with built-in error handling.
  */

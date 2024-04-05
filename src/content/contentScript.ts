@@ -2,149 +2,60 @@ import type { IContentScriptMessage, IMessage, ITabData } from '../interfaces';
 import { DOMHelper } from './DomHelper';
 import { isScriptContextMessage, isWorkerMessage } from './constants';
 
-const BUTTON_TEXTS = {
-    follow: 'FOLLOW',
-    following: 'FOLLOWING',
-    unfollow: 'UNFOLLOW',
-};
-
-// Utility function to pause execution for a given time
-const sleep = (timeMs: number): Promise<void> =>
-    new Promise((resolve) => setTimeout(resolve, timeMs));
-
 // Extracts username from the Instagram profile URL
 const getUsernameFromUrl = (url: string): string => {
     const match = url.match(/https:\/\/www\.instagram\.com\/(.+?)\//);
     return match ? match[1] : '';
 };
 
-// Toggles follow/unfollow button based on text
-const findTopLevelButton = async (
-    buttonText: string
-): Promise<HTMLButtonElement | null> => {
-    const buttons = await DOMHelper.findAllNodes<HTMLButtonElement>('button');
-    const targetButtons = DOMHelper.filterElementsByText<HTMLButtonElement>(
-        buttonText,
-        buttons
+// Fetches suggested profiles
+const getSuggestedProfileUrls = async (): Promise<string[] | undefined> => {
+    const similarAccountsElement = await DOMHelper.findNode(
+        '[aria-label="Similar accounts"]'
     );
-    const highestButton = DOMHelper.findHighestElement(targetButtons);
-    return highestButton;
-};
-
-// Follows the user
-const followUser = async (): Promise<void> => {
-    const followButton = await findTopLevelButton(BUTTON_TEXTS.follow);
-    if (followButton) {
-        followButton.click();
-        DOMHelper.log({
-            methodName: 'followUser',
-            message: 'Successfully Followed User',
-            severity: 'INFO',
-        });
-    } else {
-        DOMHelper.log({
-            methodName: 'followUser',
-            message: 'Could Not Find Main Follow Button',
-            severity: 'ERROR',
-        });
-    }
-};
-
-// Unfollows the user
-const unfollowUser = async (): Promise<void> => {
-    const followingButton = await findTopLevelButton(BUTTON_TEXTS.following);
-    if (followingButton) {
-        followingButton.click();
-        DOMHelper.log({
-            methodName: 'unfollowUser',
-            message: 'Successfully Found Main Following Button',
-            severity: 'INFO',
-        });
-        const dialogBox = await DOMHelper.findNode('[role="dialog"]');
-        if (dialogBox) {
-            DOMHelper.log({
-                methodName: 'unfollowUser',
-                message: 'Successfully Found Dialog Box',
-                severity: 'INFO',
-            });
-            const unfollowTextNode = await DOMHelper.findNodeByText(
-                BUTTON_TEXTS.unfollow,
-                dialogBox
-            );
-            if (unfollowTextNode) {
-                DOMHelper.log({
-                    methodName: 'unfollowUser',
-                    message: `Successfully Found DOM node with text ${BUTTON_TEXTS.unfollow} within Dialog Box`,
-                    severity: 'INFO',
-                });
-            } else {
-                DOMHelper.log({
-                    methodName: 'unfollowUser',
-                    message: `Could Not Find DOM node with text ${BUTTON_TEXTS.unfollow} within Dialog Box`,
-                    severity: 'FATAL',
-                });
-            }
-            const unFollowButton = DOMHelper.filterElementsByText(
-                BUTTON_TEXTS.unfollow,
-                await DOMHelper.findAllNodes<HTMLElement>(
-                    '[role="button"]',
-                    dialogBox
-                )
-            )[0];
-            if (unFollowButton) {
-                unFollowButton.click();
-                DOMHelper.log({
-                    methodName: 'unfollowUser',
-                    message: `Successfully Unfollowed User`,
-                    severity: 'INFO',
-                });
-            } else {
-                DOMHelper.log({
-                    methodName: 'unfollowUser',
-                    message: `Could Not Find Main Unfollow Button within Dialog Box`,
-                    severity: 'FATAL',
-                });
+    if (similarAccountsElement) {
+        const similarAccountsButton =
+            similarAccountsElement.closest('[role="button"]');
+        if (similarAccountsButton instanceof HTMLDivElement) {
+            similarAccountsButton.click();
+            const pageHeader = await DOMHelper.findNode('header');
+            const pageDiv = pageHeader && pageHeader.parentElement;
+            // Suggested Profiles is under the Header Section
+            const suggestedSection = pageDiv?.childNodes[1];
+            if (suggestedSection instanceof HTMLElement) {
+                const listElement = await DOMHelper.findNode<HTMLUListElement>(
+                    'ul',
+                    suggestedSection
+                );
+                if (listElement) {
+                    const childAnchorElements =
+                        await DOMHelper.findAllNodes<HTMLAnchorElement>(
+                            'a',
+                            listElement
+                        );
+                    DOMHelper.log({
+                        methodName: 'getSuggestedProfileUrls',
+                        message: `childAnchorElements ${childAnchorElements}`,
+                        severity: 'DEBUG',
+                    });
+                    const uniqueLinks = new Set<string>();
+                    childAnchorElements.forEach((link) =>
+                        uniqueLinks.add(link.href)
+                    );
+                    DOMHelper.log({
+                        methodName: 'getSuggestedProfileUrls',
+                        message: 'Successfully fetched suggested profile URLs',
+                        severity: 'INFO',
+                    });
+                    return Array.from(uniqueLinks);
+                }
             }
         } else {
             DOMHelper.log({
-                methodName: 'unfollowUser',
-                message: 'Could Not Find Dialog Box',
-                severity: 'FATAL',
+                methodName: 'getProfileImageUrl',
+                message: `Failed to locate the suggested profile button`,
+                severity: 'ERROR',
             });
-        }
-    } else {
-        DOMHelper.log({
-            methodName: 'unfollowUser',
-            message: 'Could Not Find Main Following Button',
-            severity: 'FATAL',
-        });
-    }
-};
-
-// Fetches suggested profiles
-const getSuggestedProfileUrls = async (): Promise<string[] | undefined> => {
-    const anchorElement = await DOMHelper.findNode(
-        '[href$="similar_accounts/"]'
-    );
-    if (anchorElement) {
-        const listElement = DOMHelper.findNodeUpwards<HTMLUListElement>(
-            'ul',
-            anchorElement
-        );
-        if (listElement) {
-            const childAnchorElements =
-                await DOMHelper.findAllNodes<HTMLAnchorElement>(
-                    'a',
-                    listElement
-                );
-            const uniqueLinks = new Set<string>();
-            childAnchorElements.forEach((link) => uniqueLinks.add(link.href));
-            DOMHelper.log({
-                methodName: 'getSuggestedProfileUrls',
-                message: 'Successfully fetched suggested profile URLs',
-                severity: 'INFO',
-            });
-            return Array.from(uniqueLinks);
         }
     }
     // This is an INFO log because some Instagram accounts do not have profile suggestions
@@ -313,8 +224,6 @@ const handleMessage = async (message: IMessage) => {
         const { suggester, enableStackTrace } = message.scriptContext;
         const username = getUsernameFromUrl(document.URL);
 
-        await followUser();
-
         const suggestedUrls = await getSuggestedProfileUrls();
         const suggestedProfiles = suggestedUrls?.map((url) => ({
             suggester: username,
@@ -331,14 +240,6 @@ const handleMessage = async (message: IMessage) => {
             suggestedProfiles,
             suggester,
         };
-
-        await unfollowUser();
-        DOMHelper.log({
-            methodName: 'unfollowUser',
-            message: 'Successfully UnFollowed User',
-            severity: 'INFO',
-        });
-        await sleep(1000);
 
         const response: IContentScriptMessage = {
             source: 'ContentScript',

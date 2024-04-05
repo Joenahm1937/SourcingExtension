@@ -1,50 +1,29 @@
 # Sourcing Assistant
 
-Sourcing Assistant is a Chrome extension built using Vite. Below is the file structure and a guide to get started with development and testing.
+Sourcing Assistant is a Chrome extension designed to streamline the process of collecting profiles related to a specific account for marketing purposes.
+By automating manual browsing activities, it enables users to efficiently build a network of similar accounts starting from a given account.
 
-## File Structure
+![](https://github.com/Joenahm1937/SourcingExtension/assets/41309544/933a4fc6-64b3-4ce5-b13f-886a3fa8bbae)
 
-```plaintext
-SourcingExtension/
-├── dist/
-│   ├── contentScript.js
-│   ├── index.html
-│   ├── manifest.json
-│   ├── popup.css
-│   ├── popup.js
-│   ├── serviceWorker.js
-├── node_modules/
-│   └── ...
-├── public/                        # Static assets for the extension
-│   ├── manifest.json              # Source manifest for the extension
-│   └── logo.svg
-├── src/                           # Source code for the extension
-│   ├── background/                # Background service worker logic
-│   │   └── serviceWorker.ts       # TypeScript file for the service worker
-│   ├── content/                   # Content scripts interacting with the browser
-│   │   └── contentScript.ts       # TypeScript content script file
-│   ├── popup/                     # Popup UI logic and styles
-│   │   ├── counter.ts
-│   │   ├── main.ts                # Main entry script for the popup
-│   │   ├── style.css              # Styles for the popup window
-│   └── vite-env.d.ts
-├── .gitignore
-├── index.html                     # HTML for the popup
-├── package-lock.json
-├── package.json
-├── README.md
-├── tsconfig.json                  # TypeScript compiler configuration
-└── vite.config.ts                 # Vite build and serve configuration
-```
+## Features
 
-## Getting Started
+-   **Easy to Start**: Install the extension and begin the process with a simple click.
+-   **Control Your Collection**: Stop collecting profiles at any time and reset to clear your cache.
+-   **User-Created Content Scripts**: Version 2 offers the ability for users to create their own content scripts, providing flexibility for various use cases.
+-   **Advanced Configuration**: Customize settings such as the number of tabs to open in parallel and enable debug logging for more granular control.
 
-To set up the Sourcing Assistant for development:
+_Note_: Due to frequent UI updates by Instagram, the extension's content script may occasionally fail.
+Instagram's recent changes also require users to actively click into a newly created tab to initiate the script.
 
-1. Install the necessary dependencies using `npm install`.
-2. Start the development server using `npm run watch`.
-   This will allow you to open the popup UI in both the browser and the extension for quick debugging.
-3. To build the extension for production, run `npm run build`.
-   This will compile all necessary files into the `dist/` directory.
-4. Load the `dist/` folder into Chrome Extensions. For guidance on loading unpacked extensions,
-   refer to the [Chrome Extension Getting Started Tutorial](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked).
+## How It Works
+
+1. **Installation**: Add the extension to your Chrome browser.
+2. **Activation**: Click the 'Start' button to begin collecting profiles. You can stop at any time and reset to clear the collected profiles cache.
+3. **Configuration**: For more detailed settings, access the advanced configuration through the settings icon.
+
+## Development Setup
+
+1. **Install Dependencies**: Run `npm install` to install required dependencies.
+2. **Load Extension**: Navigate to Chrome Extensions and load the `dist/` folder as an unpacked extension. For detailed instructions, see the [Chrome Extension Getting Started Tutorial](https://developer.chrome.com/docs/extensions/get-started/tutorial/hello-world#load-unpacked).
+3. **Start Development Server**: Execute `npm run watch` to start the server in watch mode, enabling live refreshes for immediate feedback on changes.
+4. **Build for Production**: Use `npm run build` to compile all necessary files into the `dist/` directory for production deployment.
